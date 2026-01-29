@@ -59,7 +59,7 @@ export default function ProjectWorkspace() {
     const [project, setProject] = useState(null);
     const [wbs, setWbs] = useState([]);
     const [payments, setPayments] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
 
     // Edit Modal State
@@ -87,15 +87,21 @@ export default function ProjectWorkspace() {
 
     useEffect(() => {
         async function loadList() {
+            setLoading(true);
             try {
                 const role = localStorage.getItem('role');
                 const userId = role === 'staff' ? localStorage.getItem('user_id') : null;
 
                 const list = await getProjects(userId);
                 setProjectsList(list);
-                if (list.length > 0) setSelectedProjectId(list[0].id);
+                if (list.length > 0) {
+                    setSelectedProjectId(list[0].id);
+                } else {
+                    setLoading(false); // No projects to load, so stop loading
+                }
             } catch (err) {
                 console.error(err);
+                setLoading(false);
             }
         }
         loadList();
@@ -182,11 +188,23 @@ export default function ProjectWorkspace() {
         </div>
     );
 
-    if (!project) return (
+    if (!project && projectsList.length > 0) return (
         <div className="p-8 text-center text-slate-500">
             <AlertCircle className="mx-auto h-12 w-12 text-slate-400 mb-4" />
             <h3 className="text-lg font-medium text-slate-900">Unable to load project</h3>
             <p>Please try refreshing the page or contact support.</p>
+        </div>
+    );
+
+    if (projectsList.length === 0) return (
+        <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+                <Briefcase className="mx-auto h-12 w-12 text-slate-300 mb-4" />
+                <h3 className="text-lg font-bold text-slate-900">No Projects Found</h3>
+                <p className="text-slate-500 mt-2 max-w-sm mx-auto">
+                    You don't have any assigned projects yet. If you're an admin, you can create new projects in the "System Overview" panel.
+                </p>
+            </div>
         </div>
     );
 
