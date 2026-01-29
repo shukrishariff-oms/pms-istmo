@@ -1,7 +1,10 @@
-from app.db.database import SessionLocal
+from app.db.database import SessionLocal, engine, Base
 from app.models import sql_models as models
 
 def seed_categories():
+    # Ensure tables are created
+    Base.metadata.create_all(bind=engine)
+    
     db = SessionLocal()
     try:
         defaults = ['General', 'Kitchen Supply', 'Office Supply', 'Maintenance', 'Training', 'Utilities']
