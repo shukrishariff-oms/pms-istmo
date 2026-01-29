@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --color-primary: #0f172a; /* Slate 900 */
+  --color-secondary: #334155; /* Slate 700 */
+  --color-accent: #3b82f6; /* Blue 500 */
+}
+
+body {
+    background-color: #f8fafc; /* Slate 50 */
+    color: #1e293b; /* Slate 800 */
+}

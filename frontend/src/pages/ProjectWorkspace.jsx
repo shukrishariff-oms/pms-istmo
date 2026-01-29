@@ -1,0 +1,841 @@
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject } from '../services/projects';
+import {
+    Calendar,
+    CheckCircle2,
+    AlertCircle,
+    Clock,
+    Wallet,
+    Layers,
+    ChevronRight,
+    ChevronDown,
+    ArrowRight,
+    TrendingUp,
+    Plus,
+    Pencil,
+    X
+} from 'lucide-react';
+import clsx from 'clsx';
+
+// --- Subcomponents ---
+
+const StatusBadge = ({ status }) => {
+    const styles = {
+        on_track: "bg-emerald-100 text-emerald-700 border-emerald-200",
+        at_risk: "bg-amber-100 text-amber-700 border-amber-200",
+        delayed: "bg-red-100 text-red-700 border-red-200",
+        completed: "bg-blue-100 text-blue-700 border-blue-200",
+        // Task statuses
+        not_started: "bg-slate-100 text-slate-600 border-slate-200",
+        in_progress: "bg-blue-50 text-blue-600 border-blue-200",
+        blocked: "bg-red-50 text-red-600 border-red-200",
+        // Payment statuses
+        unpaid: "bg-slate-100 text-slate-500",
+        claimed: "bg-amber-50 text-amber-600",
+        verified: "bg-indigo-50 text-indigo-600",
+        approved: "bg-purple-50 text-purple-600",
+        paid: "bg-emerald-50 text-emerald-600 font-semibold"
+    };
+
+    return (
+        <span className={clsx("px-2.5 py-0.5 rounded-full text-xs font-medium border", styles[status] || styles.not_started)}>
+            {status?.replace('_', ' ').toUpperCase()}
+        </span>
+    );
+};
+
+const TAB_CLASSES = "px-4 py-2 text-sm font-medium border-b-2 transition-colors";
+const ACTIVE_TAB = "border-blue-600 text-blue-600";
+const INACTIVE_TAB = "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300";
+
+export default function ProjectWorkspace() {
+    const [projectsList, setProjectsList] = useState([]);
+    const [selectedProjectId, setSelectedProjectId] = useState(null);
+
+    // Data State
+    const [project, setProject] = useState(null);
+    const [wbs, setWbs] = useState([]);
+    const [payments, setPayments] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('overview');
+
+    // Edit Modal State
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [users, setUsers] = useState([]);
+    const [editFormData, setEditFormData] = useState({
+        name: '',
+        description: '',
+        owner_id: '',
+        assist_coordinator_id: '',
+        budget_capex: 0,
+        start_date: '',
+        end_date: '',
+        status: ''
+    });
+
+    // Modal State
+    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+    const [newTaskData, setNewTaskData] = useState({
+        wbs_id: '',
+        name: '',
+        start_date: '',
+        end_date: ''
+    });
+
+    useEffect(() => {
+        async function loadList() {
+            try {
+                const role = localStorage.getItem('role');
+                const userId = role === 'staff' ? localStorage.getItem('user_id') : null;
+
+                const list = await getProjects(userId);
+                setProjectsList(list);
+                if (list.length > 0) setSelectedProjectId(list[0].id);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        loadList();
+    }, []);
+
+    useEffect(() => {
+        if (!selectedProjectId) return;
+
+        async function loadData() {
+            setLoading(true);
+            try {
+                const [p, w, pay] = await Promise.all([
+                    getProjectDetails(selectedProjectId),
+                    getProjectWBS(selectedProjectId),
+                    getProjectPayments(selectedProjectId)
+                ]);
+                setProject(p);
+                setWbs(w);
+                setPayments(pay);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setLoading(false);
+            }
+        }
+        loadData();
+    }, [selectedProjectId]);
+
+    useEffect(() => {
+        async function loadUsers() {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch("http://localhost:8000/users/", {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) setUsers(await res.json());
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        loadUsers();
+    }, []);
+
+    function openEditModal() {
+        setEditFormData({
+            code: project.code,
+            name: project.name,
+            description: project.description || '',
+            owner_id: project.owner_id,
+            assist_coordinator_id: project.assist_coordinator_id || '',
+            budget_capex: project.budget_capex,
+            start_date: project.start_date.split('T')[0],
+            end_date: project.end_date.split('T')[0],
+            status: project.status
+        });
+        setIsEditModalOpen(true);
+    }
+
+    async function handleUpdateProject() {
+        try {
+            const payload = {
+                ...editFormData,
+                owner_id: parseInt(editFormData.owner_id),
+                assist_coordinator_id: editFormData.assist_coordinator_id ? parseInt(editFormData.assist_coordinator_id) : null,
+                budget_capex: parseFloat(editFormData.budget_capex),
+                start_date: new Date(editFormData.start_date).toISOString(),
+                end_date: new Date(editFormData.end_date).toISOString()
+            };
+
+            await updateProject(project.id, payload);
+            setIsEditModalOpen(false);
+            // Refresh project data
+            const updated = await getProjectDetails(selectedProjectId);
+            setProject(updated);
+            alert("Project updated successfully!");
+        } catch (err) {
+            alert("Failed to update project: " + err.message);
+        }
+    }
+
+    if (loading) return (
+        <div className="flex items-center justify-center min-h-[400px]">
+            <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+        </div>
+    );
+
+    if (!project) return (
+        <div className="p-8 text-center text-slate-500">
+            <AlertCircle className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+            <h3 className="text-lg font-medium text-slate-900">Unable to load project</h3>
+            <p>Please try refreshing the page or contact support.</p>
+        </div>
+    );
+
+    return (
+        <div className="space-y-6">
+            {/* List Selector (Mock Sidebar for Project Switching) */}
+            <div className="flex items-center gap-4 overflow-x-auto pb-2">
+                {projectsList.map(p => (
+                    <button
+                        key={p.id}
+                        onClick={() => setSelectedProjectId(p.id)}
+                        className={clsx(
+                            "px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
+                            selectedProjectId === p.id
+                                ? "bg-slate-900 text-white shadow-md"
+                                : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200"
+                        )}
+                    >
+                        {p.code}
+                    </button>
+                ))}
+            </div>
+
+            {/* Header */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <h1 className="text-2xl font-bold text-slate-900">{project.name}</h1>
+                            <StatusBadge status={project.status} />
+                        </div>
+                        <p className="text-slate-500 max-w-2xl">{project.description}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-3">
+                        <div className="text-right">
+                            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Budget</p>
+                            <p className="text-2xl font-bold text-slate-900">MYR {(project.budget_capex + project.budget_opex_allocation).toLocaleString()}</p>
+                        </div>
+                        {localStorage.getItem('role') === 'admin' && (
+                            <button
+                                onClick={openEditModal}
+                                className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-bold"
+                            >
+                                <Pencil size={14} /> Edit Details
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Key Metrics */}
+                <div className="grid grid-cols-4 gap-6 mt-8 pt-6 border-t border-slate-100">
+                    <div>
+                        <p className="text-xs text-slate-400 font-medium">Start Date</p>
+                        <p className="text-sm font-semibold text-slate-700 mt-1 flex items-center gap-2">
+                            <Calendar size={14} />
+                            {new Date(project.start_date).toLocaleDateString()}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-slate-400 font-medium">End Date</p>
+                        <p className="text-sm font-semibold text-slate-700 mt-1 flex items-center gap-2">
+                            <Clock size={14} />
+                            {new Date(project.end_date).toLocaleDateString()}
+                        </p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-slate-400 font-medium">CAPEX Utilization</p>
+                        <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
+                            <div className="bg-blue-500 h-full rounded-full" style={{ width: '45%' }}></div>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">45% Used</p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-slate-400 font-medium">Task Progress</p>
+                        <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
+                            <div className="bg-emerald-500 h-full rounded-full" style={{ width: '60%' }}></div>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">60% Completed</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="border-b border-slate-200">
+                <nav className="-mb-px flex space-x-8">
+                    {['overview', 'wbs', 'timeline', 'finance', 'files'].map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={clsx(TAB_CLASSES, activeTab === tab ? ACTIVE_TAB : INACTIVE_TAB)}
+                        >
+                            {tab.toUpperCase()}
+                        </button>
+                    ))}
+                </nav>
+            </div>
+
+            {/* Content Area */}
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 min-h-[400px]">
+
+                {/* OVERVIEW TAB */}
+                {activeTab === 'overview' && (
+                    <div className="p-8 grid grid-cols-2 gap-8">
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <TrendingUp size={20} className="text-blue-600" />
+                                Current Focus
+                            </h3>
+                            <div className="space-y-4">
+                                {wbs.flatMap(w => w.tasks).filter(t => t.status === 'in_progress').map(task => (
+                                    <div key={task.id} className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg flex justify-between items-center">
+                                        <div>
+                                            <p className="font-semibold text-slate-800">{task.name}</p>
+                                            <p className="text-xs text-slate-500">Due: {new Date(task.due_date).toLocaleDateString()}</p>
+                                        </div>
+                                        <StatusBadge status={task.status} />
+                                    </div>
+                                ))}
+                                {wbs.flatMap(w => w.tasks).filter(t => t.status === 'in_progress').length === 0 && (
+                                    <p className="text-slate-400 italic">No tasks currently in progress.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <AlertCircle size={20} className="text-amber-500" />
+                                At Risk / Delayed
+                            </h3>
+                            <div className="space-y-4">
+                                {wbs.flatMap(w => w.tasks).filter(t => ['blocked', 'delayed'].includes(t.status) || new Date(t.due_date) < new Date()).map(task => (
+                                    <div key={task.id} className="p-4 bg-red-50/50 border border-red-100 rounded-lg flex justify-between items-center">
+                                        <div>
+                                            <p className="font-semibold text-slate-800">{task.name}</p>
+                                            <p className="text-xs text-red-500 font-medium">Due: {new Date(task.due_date).toLocaleDateString()}</p>
+                                        </div>
+                                        <StatusBadge status={'blocked'} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* WBS TAB - DATA GRID ONLY */}
+                {activeTab === 'wbs' && (
+                    <div className="p-0 relative">
+                        {/* Task Creation Modal */}
+                        {isTaskModalOpen && (
+                            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
+                                <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-96 p-6 animate-in fade-in zoom-in duration-200">
+                                    <h3 className="text-lg font-bold text-slate-900 mb-4">Add New Task</h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 mb-1">Target Phase</label>
+                                            <select
+                                                className="w-full text-sm border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                                value={newTaskData.wbs_id}
+                                                onChange={(e) => setNewTaskData({ ...newTaskData, wbs_id: e.target.value })}
+                                            >
+                                                {wbs.map(phase => (
+                                                    <option key={phase.id} value={phase.id}>{phase.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-500 mb-1">Task Name</label>
+                                            <input
+                                                type="text"
+                                                autoFocus
+                                                className="w-full text-sm border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                                                value={newTaskData.name}
+                                                onChange={(e) => setNewTaskData({ ...newTaskData, name: e.target.value })}
+                                                placeholder="e.g. Server Configuration"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-500 mb-1">Start Date</label>
+                                                <input
+                                                    type="date"
+                                                    className="w-full text-sm border border-slate-300 rounded-lg p-2 outline-none"
+                                                    value={newTaskData.start_date}
+                                                    onChange={(e) => setNewTaskData({ ...newTaskData, start_date: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-500 mb-1">End Date</label>
+                                                <input
+                                                    type="date"
+                                                    className="w-full text-sm border border-slate-300 rounded-lg p-2 outline-none"
+                                                    value={newTaskData.end_date}
+                                                    onChange={(e) => setNewTaskData({ ...newTaskData, end_date: e.target.value })}
+                                                    min={newTaskData.start_date}
+                                                />
+                                            </div>
+                                        </div>
+                                        {/* Duration Preview */}
+                                        <div className="bg-slate-50 p-2 rounded text-xs text-slate-500 text-center border border-slate-100">
+                                            Auto-Calculated Duration: <span className="font-bold text-slate-800">
+                                                {newTaskData.start_date && newTaskData.end_date
+                                                    ? Math.max(1, Math.ceil((new Date(newTaskData.end_date) - new Date(newTaskData.start_date)) / (1000 * 60 * 60 * 24)))
+                                                    : '-'} Days
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div className="mt-6 flex justify-end gap-2">
+                                        <button
+                                            onClick={() => setIsTaskModalOpen(false)}
+                                            className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                if (!newTaskData.name || !newTaskData.start_date || !newTaskData.end_date) return;
+
+                                                await createProjectTask(selectedProjectId, {
+                                                    wbs_id: parseInt(newTaskData.wbs_id),
+                                                    name: newTaskData.name,
+                                                    status: "not_started",
+                                                    planned_start: new Date(newTaskData.start_date).toISOString(),
+                                                    due_date: new Date(newTaskData.end_date).toISOString()
+                                                });
+                                                const w = await getProjectWBS(selectedProjectId);
+                                                setWbs(w);
+                                                setIsTaskModalOpen(false);
+                                                setNewTaskData(prev => ({ ...prev, name: '' })); // Reset name only
+                                            }}
+                                            className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors"
+                                        >
+                                            Save Task
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-end">
+                            <button
+                                onClick={async () => {
+                                    const phaseName = prompt("Enter new Phase Name (e.g., 4.0 Testing):");
+                                    if (phaseName) {
+                                        await createProjectWBS(selectedProjectId, { name: phaseName });
+                                        const w = await getProjectWBS(selectedProjectId);
+                                        setWbs(w);
+                                    }
+                                }}
+                                className="mr-2 flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+                            >
+                                <Plus size={16} /> Add Phase
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (wbs.length > 0) {
+                                        const today = new Date().toISOString().split('T')[0];
+                                        setNewTaskData({
+                                            wbs_id: wbs[0].id,
+                                            name: '',
+                                            start_date: today,
+                                            end_date: today
+                                        });
+                                        setIsTaskModalOpen(true);
+                                    } else {
+                                        alert("Please create a Phase first.");
+                                    }
+                                }}
+                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm"
+                            >
+                                <Plus size={16} /> Add Task
+                            </button>
+                        </div>
+                        <div className="overflow-x-auto min-h-[400px]">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold sticky top-0 bg-white z-10 shadow-sm">
+                                    <tr>
+                                        <th className="px-6 py-4 border-b border-slate-200 w-16 text-center">ID</th>
+                                        <th className="px-6 py-4 border-b border-slate-200">WBS / Task Name</th>
+                                        <th className="px-6 py-4 border-b border-slate-200">Assignee</th>
+                                        <th className="px-6 py-4 border-b border-slate-200">Duration</th>
+                                        <th className="px-6 py-4 border-b border-slate-200">Start - Finish</th>
+                                        <th className="px-6 py-4 border-b border-slate-200 text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {wbs.map((phase, pIdx) => (
+                                        <>
+                                            <tr key={`phase-${phase.id}`} className="bg-slate-50/50">
+                                                <td className="px-6 py-3 text-xs font-bold text-slate-400 text-center">{pIdx + 1}</td>
+                                                <td colSpan={5} className="px-6 py-3 font-bold text-slate-800 flex items-center gap-2">
+                                                    <Layers size={16} className="text-slate-500" />
+                                                    {phase.name}
+                                                </td>
+                                            </tr>
+                                            {phase.tasks.map((task, tIdx) => {
+                                                const start = new Date(task.planned_start || task.created_at || Date.now());
+                                                const end = new Date(task.due_date);
+                                                const duration = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+                                                return (
+                                                    <tr key={task.id} className="hover:bg-slate-50/80 transition-colors">
+                                                        <td className="px-6 py-4 text-xs text-slate-400 text-center">{pIdx + 1}.{tIdx + 1}</td>
+                                                        <td className="px-6 py-4 pl-12 text-sm text-slate-700 font-medium relative">
+                                                            <div className="absolute left-8 top-1/2 -mt-px w-3 h-px bg-slate-300"></div>
+                                                            {task.name}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-slate-500">
+                                                            {task.assignee ? task.assignee.full_name : 'Unassigned'}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-xs text-slate-500">
+                                                            {duration} days
+                                                        </td>
+                                                        <td className="px-6 py-4 text-xs text-slate-500">
+                                                            {task.planned_start ? new Date(task.planned_start).toLocaleDateString() : '-'} - {new Date(task.due_date).toLocaleDateString()}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <StatusBadge status={task.status} />
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* TIMELINE TAB - GANTT VIEW */}
+                {activeTab === 'timeline' && (
+                    <div className="flex flex-col h-[600px] border border-slate-300 bg-white select-none">
+                        <div className="h-10 border-b border-slate-200 bg-slate-50 flex items-center px-4 justify-between">
+                            <div className="flex items-center gap-2 text-xs text-slate-600">
+                                <span className="font-bold">GANTT VISUALIZATION</span>
+                                <span className="h-4 w-px bg-slate-300 mx-1"></span>
+                                <span>Project Baseline: {new Date(project.start_date).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                        {/* MS Project Header */}
+                        <div className="flex text-xs font-bold text-slate-700 bg-slate-100 border-b border-slate-300">
+                            <div className="w-12 p-2 border-r border-slate-300 text-center">ID</div>
+                            <div className="w-6 p-2 border-r border-slate-300 text-center">i</div>
+                            <div className="w-64 p-2 border-r border-slate-300">Task Name</div>
+                            <div className="w-24 p-2 border-r border-slate-300">Start</div>
+                            <div className="w-24 p-2 border-r border-slate-300">Finish</div>
+                            <div className="flex-1 p-2 bg-slate-50 text-center text-slate-400">Timeline</div>
+                        </div>
+
+                        {/* Grid Rows */}
+                        <div className="overflow-y-auto flex-1 bg-white">
+                            {wbs.map((phase, pIdx) => (
+                                <div key={`phase-${phase.id}`}>
+                                    {/* Phase Row */}
+                                    <div className="flex text-xs border-b border-slate-100 bg-slate-50/80 font-bold hover:bg-blue-50">
+                                        <div className="w-12 p-1 px-2 border-r border-slate-200 text-right text-slate-500">{pIdx + 1}</div>
+                                        <div className="w-6 p-1 border-r border-slate-200 text-center">
+                                            <Layers size={10} className="mx-auto text-slate-500" />
+                                        </div>
+                                        <div className="w-64 p-1 px-2 border-r border-slate-200 truncate uppercase text-slate-800">
+                                            {phase.name}
+                                        </div>
+                                        <div className="w-24 p-1 border-r border-slate-200"></div>
+                                        <div className="w-24 p-1 border-r border-slate-200"></div>
+                                        <div className="flex-1 p-1 relative bg-slate-50/30"></div>
+                                    </div>
+
+                                    {/* Task Rows */}
+                                    {phase.tasks.map((task, tIdx) => {
+                                        const start = new Date(task.planned_start || task.created_at || Date.now());
+                                        const end = new Date(task.due_date);
+                                        const duration = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+                                        const projStart = new Date(project.start_date);
+                                        const offsetDays = Math.max(0, Math.floor((start - projStart) / (1000 * 60 * 60 * 24)));
+                                        const width = duration * 10;
+                                        const left = offsetDays * 10;
+
+                                        return (
+                                            <div key={task.id} className="flex text-xs border-b border-slate-100 hover:bg-blue-50 group">
+                                                <div className="w-12 p-1 px-2 border-r border-slate-200 text-right text-slate-400">{pIdx + 1}.{tIdx + 1}</div>
+                                                <div className="w-6 p-1 border-r border-slate-200 text-center">
+                                                    <div className={clsx("w-3 h-3 mx-auto mt-0.5 rounded-sm",
+                                                        task.status === 'completed' ? "bg-blue-500" :
+                                                            task.status === 'in_progress' ? "bg-green-500" : "bg-slate-300"
+                                                    )}></div>
+                                                </div>
+                                                <div className="w-64 p-1 px-2 border-r border-slate-200 truncate pl-6 relative">
+                                                    <div className="absolute left-2 top-0 bottom-0 w-px bg-slate-200"></div>
+                                                    <div className="absolute left-2 top-1/2 w-3 h-px bg-slate-200"></div>
+                                                    {task.name}
+                                                </div>
+                                                <div className="w-24 p-1 border-r border-slate-200 text-slate-600">
+                                                    {start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                </div>
+                                                <div className="w-24 p-1 border-r border-slate-200 text-slate-600">
+                                                    {end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                </div>
+
+                                                {/* Gantt Bar Visualization */}
+                                                <div className="flex-1 relative border-l border-slate-100 bg-white">
+                                                    <div className="absolute inset-0 flex">
+                                                        {[...Array(20)].map((_, i) => (
+                                                            <div key={i} className="flex-1 border-r border-slate-50"></div>
+                                                        ))}
+                                                    </div>
+                                                    <div className={clsx(
+                                                        "absolute top-1.5 h-3 rounded-sm shadow-sm opacity-80 min-w-[4px]",
+                                                        task.status === 'completed' ? 'bg-blue-500' :
+                                                            task.status === 'in_progress' ? 'bg-green-500' : 'bg-slate-400'
+                                                    )}
+                                                        style={{
+                                                            left: `${Math.min(left, 400)}px`,
+                                                            width: `${width}px`
+                                                        }}></div>
+                                                    <div className="absolute top-1 text-[10px] text-slate-400 whitespace-nowrap"
+                                                        style={{ left: `${Math.min(left, 400) + width + 5}px` }}
+                                                    >
+                                                        {task.assignee?.full_name?.split(' ')[0]}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* FINANCE TAB */}
+                {activeTab === 'finance' && (
+                    <div className="p-0">
+                        <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-200 bg-slate-50/30">
+                            <div className="p-6 text-center">
+                                <p className="text-xs text-slate-400 font-bold uppercase">Total Planned</p>
+                                <p className="text-xl font-bold text-slate-900 mt-1">MYR {payments.reduce((acc, p) => acc + p.amount, 0).toLocaleString()}</p>
+                            </div>
+                            <div className="p-6 text-center">
+                                <p className="text-xs text-slate-400 font-bold uppercase">Actual Paid</p>
+                                <p className="text-xl font-bold text-emerald-600 mt-1">
+                                    MYR {payments.filter(p => p.status === 'paid').reduce((acc, p) => acc + p.amount, 0).toLocaleString()}
+                                </p>
+                            </div>
+                            <div className="p-6 text-center">
+                                <p className="text-xs text-slate-400 font-bold uppercase">Outstanding</p>
+                                <p className="text-xl font-bold text-slate-900 mt-1">
+                                    MYR {payments.filter(p => p.status !== 'paid').reduce((acc, p) => acc + p.amount, 0).toLocaleString()}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="p-4 border-b border-slate-100 bg-white flex justify-end">
+                            <button
+                                onClick={async () => {
+                                    const title = prompt("Payment Title:");
+                                    if (!title) return;
+                                    const amount = prompt("Amount (MYR):", "10000");
+                                    const type = prompt("Type (capex/opex):", "capex");
+
+                                    await createProjectPayment(selectedProjectId, {
+                                        title: title,
+                                        vendor_name: "TBD Vendor",
+                                        amount: parseFloat(amount),
+                                        payment_type: type.toLowerCase(),
+                                        planned_date: new Date().toISOString(),
+                                        status: "unpaid"
+                                    });
+                                    const pay = await getProjectPayments(selectedProjectId);
+                                    setPayments(pay);
+                                }}
+                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm"
+                            >
+                                <Plus size={16} /> Schedule Payment
+                            </button>
+                        </div>
+
+                        <table className="w-full text-left border-collapse">
+                            <thead className="bg-white text-xs uppercase text-slate-500 font-semibold">
+                                <tr>
+                                    <th className="px-6 py-4 border-b border-slate-200">Milestone / Item</th>
+                                    <th className="px-6 py-4 border-b border-slate-200">Details</th>
+                                    <th className="px-6 py-4 border-b border-slate-200 text-right">Amount (MYR)</th>
+                                    <th className="px-6 py-4 border-b border-slate-200 text-center">Status</th>
+                                    <th className="px-6 py-4 border-b border-slate-200"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {payments.map(pay => (
+                                    <tr key={pay.id} className="group hover:bg-slate-50">
+                                        <td className="px-6 py-4">
+                                            <p className="font-semibold text-slate-900 text-sm">{pay.title}</p>
+                                            <p className="text-xs text-slate-500 mt-1">{pay.vendor_name}</p>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600">
+                                                {pay.payment_type.toUpperCase()}
+                                            </span>
+                                            <p className="text-xs text-slate-500 mt-1">Due: {new Date(pay.planned_date).toLocaleDateString()}</p>
+                                        </td>
+                                        <td className="px-6 py-4 text-right font-medium text-slate-900">
+                                            {pay.amount.toLocaleString()}
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <StatusBadge status={pay.status} />
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button className="text-slate-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <ArrowRight size={18} />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {/* FILES TAB */}
+                {activeTab === 'files' && (
+                    <div className="p-10 text-center">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                            <Layers size={32} />
+                        </div>
+                        <h3 className="text-lg font-medium text-slate-900">Project Files</h3>
+                        <p className="text-slate-500 mt-2">No files uploaded yet.</p>
+                        <button className="mt-6 px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium text-sm">
+                            Upload Document
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Edit Project Modal */}
+            {isEditModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl p-8 w-[600px] animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-slate-900">Edit Project Details</h2>
+                            <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-red-500 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Project Code</label>
+                                <input
+                                    className="w-full border p-2 rounded-lg bg-slate-50 border-slate-200 outline-none font-mono uppercase"
+                                    value={editFormData.code || ''}
+                                    onChange={e => setEditFormData({ ...editFormData, code: e.target.value.toUpperCase() })}
+                                />
+                            </div>
+
+                            <div className="col-span-1">
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Project Name</label>
+                                <input
+                                    className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 border-slate-200 outline-none"
+                                    value={editFormData.name}
+                                    onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
+                                <select
+                                    className="w-full border p-2 rounded-lg bg-slate-50 border-slate-200 outline-none"
+                                    value={editFormData.status}
+                                    onChange={e => setEditFormData({ ...editFormData, status: e.target.value })}
+                                >
+                                    <option value="on_track">On Track</option>
+                                    <option value="at_risk">At Risk</option>
+                                    <option value="delayed">Delayed</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">CAPEX Budget (MYR)</label>
+                                <input
+                                    type="number"
+                                    className="w-full border p-2 rounded-lg border-slate-200 outline-none"
+                                    value={editFormData.budget_capex}
+                                    onChange={e => setEditFormData({ ...editFormData, budget_capex: e.target.value })}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Main Coordinator</label>
+                                <select
+                                    className="w-full border p-2 rounded-lg bg-blue-50 border-blue-200 outline-none"
+                                    value={editFormData.owner_id}
+                                    onChange={e => setEditFormData({ ...editFormData, owner_id: e.target.value })}
+                                >
+                                    {users.map(u => (
+                                        <option key={u.id} value={u.id}>{u.full_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Assist Coordinator</label>
+                                <select
+                                    className="w-full border p-2 rounded-lg bg-indigo-50 border-indigo-200 outline-none"
+                                    value={editFormData.assist_coordinator_id}
+                                    onChange={e => setEditFormData({ ...editFormData, assist_coordinator_id: e.target.value })}
+                                >
+                                    <option value="">None</option>
+                                    {users.filter(u => u.id !== parseInt(editFormData.owner_id)).map(u => (
+                                        <option key={u.id} value={u.id}>{u.full_name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    className="w-full border p-2 rounded-lg border-slate-200 outline-none"
+                                    value={editFormData.start_date}
+                                    onChange={e => setEditFormData({ ...editFormData, start_date: e.target.value })}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">End Date</label>
+                                <input
+                                    type="date"
+                                    className="w-full border p-2 rounded-lg border-slate-200 outline-none"
+                                    value={editFormData.end_date}
+                                    onChange={e => setEditFormData({ ...editFormData, end_date: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="col-span-2">
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
+                                <textarea
+                                    className="w-full border p-2 rounded-lg h-24 border-slate-200 outline-none"
+                                    value={editFormData.description}
+                                    onChange={e => setEditFormData({ ...editFormData, description: e.target.value })}
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex justify-end gap-3">
+                            <button onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancel</button>
+                            <button onClick={handleUpdateProject} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md transition-all active:scale-95">
+                                Update Project
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}

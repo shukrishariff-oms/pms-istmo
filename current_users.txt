@@ -1,0 +1,6 @@
+(1, 'admin', 'System Admin', 'admin')
+(2, 'Firdaus', 'Muhammad Firdaus Bin Zulkiflee', 'admin')
+(3, 'Rahim', 'Rahim Rasimin', 'hod')
+(4, 'Amri', 'Khairul Amri B. Zainudin', 'staff')
+(5, 'Shukri', 'Mohd Shukri B. Shariff', 'admin')
+(6, 'Shahidah', 'Norshahidah Bt Md Yusof', 'staff')
