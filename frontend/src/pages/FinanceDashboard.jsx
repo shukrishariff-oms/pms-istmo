@@ -435,7 +435,7 @@ export default function FinanceDashboard() {
                             <h3 className="font-bold text-slate-800 text-sm">Category Budgets Breakdown</h3>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-slate-100 border-b border-slate-100">
-                            {FINANCE_CATEGORIES.map(cat => {
+                            {uniqueCategories.filter(c => c !== 'All').map(cat => {
                                 const budget = deptStats.category_budgets?.find(b => b.category === cat)?.amount || 0;
                                 const spent = (deptStats.expenses || [])
                                     .filter(e => e.category === cat)
