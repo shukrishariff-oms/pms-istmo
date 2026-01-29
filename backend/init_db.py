@@ -159,8 +159,8 @@ def init_db():
 
     db.commit()
 
-    staff1 = db.query(sql_models.User).filter(sql_models.User.username == "staff1").first()
-    staff2 = db.query(sql_models.User).filter(sql_models.User.username == "staff2").first()
+    staff1 = db.query(sql_models.User).filter(sql_models.User.username == "khairulamri").first()
+    staff2 = db.query(sql_models.User).filter(sql_models.User.username == "shahidahyusof").first()
 
     print("Seeding 5 Scenarios...")
 
