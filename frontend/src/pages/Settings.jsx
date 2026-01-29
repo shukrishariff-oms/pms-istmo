@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Lock, Users, Plus, X, Search, Shield, Briefcase, Trash2, Pencil } from 'lucide-react';
 import clsx from 'clsx';
 
-const API_URL = "http://localhost:8000";
+const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
 
 export default function Settings() {
     const [activeTab, setActiveTab] = useState('general');

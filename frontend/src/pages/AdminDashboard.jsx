@@ -4,7 +4,7 @@ import { getProjects, createProject, deleteProject, updateProject } from '../ser
 import { Users, Plus, ShieldCheck, Calendar, Wallet, Trash2, Pencil } from 'lucide-react';
 import clsx from 'clsx';
 
-const API_URL = "http://localhost:8000";
+const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
 
 export default function AdminDashboard() {
     const [projects, setProjects] = useState([]);

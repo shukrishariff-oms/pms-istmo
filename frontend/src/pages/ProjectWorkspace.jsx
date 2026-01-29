@@ -126,7 +126,7 @@ export default function ProjectWorkspace() {
         async function loadUsers() {
             try {
                 const token = localStorage.getItem('token');
-                const res = await fetch("http://localhost:8000/users/", {
+                const res = await fetch("/users/", {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) setUsers(await res.json());

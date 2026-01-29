@@ -4,7 +4,7 @@ import { Briefcase, ListTodo, FileText, TrendingUp, Calendar, ArrowRight, CheckC
 import { getProjects } from '../services/projects';
 import clsx from 'clsx';
 
-const API_URL = "http://localhost:8000";
+const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
 
 const StatCard = ({ label, value, icon: Icon, color }) => (
     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">

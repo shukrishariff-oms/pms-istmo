@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Users, Search, Briefcase, ListTodo, FileText, CheckCircle2 } from 'lucide-react';
 
-const API_URL = "http://localhost:8000";
+const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
 
 export default function StaffDirectory() {
     const [stats, setStats] = useState([]);
@@ -113,8 +113,8 @@ export default function StaffDirectory() {
                                 </td>
                                 <td className="px-6 py-4 text-right">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${s.stats.active_projects + s.stats.pending_tasks > 8 ? 'bg-red-100 text-red-700' :
-                                            s.stats.active_projects + s.stats.pending_tasks > 0 ? 'bg-emerald-50 text-emerald-700' :
-                                                'bg-slate-100 text-slate-500'
+                                        s.stats.active_projects + s.stats.pending_tasks > 0 ? 'bg-emerald-50 text-emerald-700' :
+                                            'bg-slate-100 text-slate-500'
                                         }`}>
                                         {s.stats.active_projects + s.stats.pending_tasks > 8 ? 'Overloaded' :
                                             s.stats.active_projects + s.stats.pending_tasks > 0 ? 'Optimal' : 'Inactive'}
