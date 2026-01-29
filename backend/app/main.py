@@ -12,8 +12,9 @@ app = FastAPI(
 
 # CORS Configuration
 origins = [
-    "http://localhost:5173",  # Vite default port
+    "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "*", # Allow all for initial deployment ease
 ]
 
 from app.db.database import get_db
