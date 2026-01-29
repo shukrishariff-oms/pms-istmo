@@ -119,6 +119,16 @@ class BudgetRequest(Base):
     requester = relationship("User", foreign_keys=[requester_id], back_populates="budget_requests")
     approver = relationship("User", foreign_keys=[approved_by_id])
 
+class FinanceCategory(Base):
+    __tablename__ = "finance_categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    parent_id = Column(Integer, ForeignKey("finance_categories.id"), nullable=True)
+
+    parent = relationship("FinanceCategory", remote_side=[id], back_populates="children")
+    children = relationship("FinanceCategory", back_populates="parent", cascade="all, delete-orphan")
+
 class Project(Base):
     __tablename__ = "projects"
     

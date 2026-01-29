@@ -34,6 +34,7 @@ app.include_router(portfolio.router)
 app.include_router(finance.router, prefix="/finance", tags=["Finance"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(documents.router, prefix="/documents", tags=["Documents"])
+app.include_router(categories.router, prefix="/categories", tags=["Categories"])
 
 # Serve Frontend Static Files
 # We mount this LAST so it doesn't interfere with API routes

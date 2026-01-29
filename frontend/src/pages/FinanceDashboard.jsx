@@ -12,6 +12,7 @@ import {
     updateDepartmentExpense,
     updateBudgetRequest
 } from '../services/finance';
+import { getCategories } from '../services/categories';
 import {
     DollarSign,
     Briefcase,
@@ -38,7 +39,6 @@ const currencyFormatter = new Intl.NumberFormat('en-MY', {
     minimumFractionDigits: 0
 });
 
-const FINANCE_CATEGORIES = ['General', 'Kitchen Supply', 'Office Supply', 'Maintenance', 'Training', 'Utilities'];
 
 export default function FinanceDashboard() {
     const [activeTab, setActiveTab] = useState('capex');
@@ -47,6 +47,7 @@ export default function FinanceDashboard() {
 
     // CAPEX Data
     const [projects, setProjects] = useState([]);
+    const [categories, setCategories] = useState([]);
 
     // OPEX Data
     const [deptStats, setDeptStats] = useState({ expenses: [], requests: [] });
@@ -113,6 +114,14 @@ export default function FinanceDashboard() {
                     setRequests(reqList);
                 } catch (err) {
                     console.error("Failed to load requests", err);
+                }
+            })(),
+            (async () => {
+                try {
+                    const catList = await getCategories();
+                    setCategories(catList);
+                } catch (err) {
+                    console.error("Failed to load categories", err);
                 }
             })()
         ]);
@@ -265,7 +274,15 @@ export default function FinanceDashboard() {
     });
 
     // Unique Categories
-    const categories = ['All', ...new Set(allLedgerItems.map(i => i.category))];
+    const uniqueCategories = ['All', ...new Set(allLedgerItems.map(i => i.category))];
+
+    const flatCategories = categories.reduce((acc, cat) => {
+        acc.push(cat.name);
+        if (cat.children) {
+            cat.children.forEach(sub => acc.push(`${cat.name} - ${sub.name}`));
+        }
+        return acc;
+    }, []);
 
     return (
         <div className="space-y-6">
@@ -452,7 +469,7 @@ export default function FinanceDashboard() {
                                 </h3>
                                 {/* Category Tabs */}
                                 <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
-                                    {categories.map(cat => (
+                                    {uniqueCategories.map(cat => (
                                         <button
                                             key={cat}
                                             onClick={() => setOpexCategoryFilter(cat)}
@@ -693,12 +710,10 @@ export default function FinanceDashboard() {
                                         value={newExpense.category}
                                         onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}
                                     >
-                                        <option>General</option>
-                                        <option>Kitchen Supply</option>
-                                        <option>Office Supply</option>
-                                        <option>Maintenance</option>
-                                        <option>Training</option>
-                                        <option>Utilities</option>
+                                        {flatCategories.map(c => (
+                                            <option key={c} value={c}>{c}</option>
+                                        ))}
+                                        {flatCategories.length === 0 && <option>General</option>}
                                     </select>
                                 </div>
                                 <div className="mt-6 flex justify-end gap-2">
@@ -751,12 +766,10 @@ export default function FinanceDashboard() {
                                         value={newRequest.category}
                                         onChange={e => setNewRequest({ ...newRequest, category: e.target.value })}
                                     >
-                                        <option>General</option>
-                                        <option>Kitchen Supply</option>
-                                        <option>Office Supply</option>
-                                        <option>Maintenance</option>
-                                        <option>Training</option>
-                                        <option>Utilities</option>
+                                        {flatCategories.map(c => (
+                                            <option key={c} value={c}>{c}</option>
+                                        ))}
+                                        {flatCategories.length === 0 && <option>General</option>}
                                     </select>
                                 </div>
                                 <div>
