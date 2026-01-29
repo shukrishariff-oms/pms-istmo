@@ -274,15 +274,18 @@ export default function FinanceDashboard() {
     });
 
     // Unique Categories
-    const uniqueCategories = ['All', ...new Set(allLedgerItems.map(i => i.category))];
+    const uniqueCategories = ['All', ...new Set(allLedgerItems.map(i => i.category).filter(Boolean))];
 
-    const flatCategories = categories.reduce((acc, cat) => {
+    const flatCategories = Array.isArray(categories) ? categories.reduce((acc, cat) => {
+        if (!cat || !cat.name) return acc;
         acc.push(cat.name);
-        if (cat.children) {
-            cat.children.forEach(sub => acc.push(`${cat.name} - ${sub.name}`));
+        if (cat.children && Array.isArray(cat.children)) {
+            cat.children.forEach(sub => {
+                if (sub && sub.name) acc.push(`${cat.name} - ${sub.name}`);
+            });
         }
         return acc;
-    }, []);
+    }, []) : [];
 
     return (
         <div className="space-y-6">
