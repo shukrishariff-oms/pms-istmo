@@ -7,9 +7,10 @@ import os
 # Actually, let's just use an absolute path relative to the runtime or environment.
 # But better to be dynamic.
 # app/db/database.py -> app/db -> app -> backend -> ROOT
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-DB_DIR = os.path.join(BASE_DIR, "storage", "database")
-DB_PATH = os.path.join(DB_DIR, "app.db")
+# ROOT directory is 3 levels up: app/db/database.py -> app/db -> app -> ROOT
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DB_DIR = os.path.join(BASE_DIR, "storage")
+DB_PATH = os.path.join(DB_DIR, "pms.db")
 
 # Ensure directory exists
 os.makedirs(DB_DIR, exist_ok=True)

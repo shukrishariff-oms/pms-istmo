@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from app.db.database import get_db
@@ -32,8 +33,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 @router.post("/token")
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(sql_models.User).filter(
-        (sql_models.User.username == form_data.username) | 
-        (sql_models.User.email == form_data.username)
+        (func.lower(sql_models.User.username) == func.lower(form_data.username)) | 
+        (func.lower(sql_models.User.email) == func.lower(form_data.username))
     ).first()
     if not user or not security.verify_password(form_data.password, user.password_hash):
         raise HTTPException(
