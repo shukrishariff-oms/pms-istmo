@@ -83,9 +83,17 @@ async def create_document(
         doc_data["ref_number"] = None
         
     db_doc = models.DocumentTracker(**doc_data)
+    # Explicitly set status if not provided (should be handled by default, but being safe)
+    if not db_doc.status:
+        db_doc.status = "pending"
+        
     db.add(db_doc)
-    db.commit()
-    db.refresh(db_doc)
+    try:
+        db.commit()
+        db.refresh(db_doc)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Database error: {str(e)}")
     
     # Create first log entry
     first_log = models.DocumentLog(
@@ -96,8 +104,12 @@ async def create_document(
         note="Physical tracking started."
     )
     db.add(first_log)
-    db.commit()
-    db.refresh(db_doc)
+    try:
+        db.commit()
+        db.refresh(db_doc)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Log creation error: {str(e)}")
     
     return db_doc
 
