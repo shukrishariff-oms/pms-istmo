@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000";
+const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
 
 export const login = async (username, password) => {
     // Mock login for prototype if backend isn't fully ready with JWT
