@@ -35,10 +35,6 @@ app.include_router(finance.router, prefix="/finance", tags=["Finance"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(documents.router, prefix="/documents", tags=["Documents"])
 
-@app.get("/")
-def read_root():
-    return {"system": "DPFT API", "status": "active"}
-
 # Serve Frontend Static Files
 # We mount this LAST so it doesn't interfere with API routes
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "frontend", "dist")
