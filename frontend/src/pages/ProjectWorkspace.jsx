@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 
+const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
+
 // --- Subcomponents ---
 
 const StatusBadge = ({ status }) => {
