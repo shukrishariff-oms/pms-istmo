@@ -107,13 +107,28 @@ def init_db():
 
     print("Seeding Users...")
     # 1. Create Users
-    users = [
-        sql_models.User(username="admin", email="admin@dpft.local", full_name="System Admin", role=sql_models.UserRole.ADMIN, password_hash=get_password_hash("admin123"), department_id=it_dept.id),
-        sql_models.User(username="hod", email="hod@dpft.local", full_name="Director HOD", role=sql_models.UserRole.HOD, password_hash=get_password_hash("password"), department_id=it_dept.id),
-        sql_models.User(username="finance", email="finance@dpft.local", full_name="Finance Officer", role=sql_models.UserRole.FINANCE, password_hash=get_password_hash("password"), department_id=it_dept.id),
-        sql_models.User(username="staff1", email="staff1@dpft.local", full_name="Alice Coordinator", role=sql_models.UserRole.STAFF, password_hash=get_password_hash("password"), department_id=it_dept.id),
-        sql_models.User(username="staff2", email="staff2@dpft.local", full_name="Bob Engineer", role=sql_models.UserRole.STAFF, password_hash=get_password_hash("password"), department_id=it_dept.id),
+    users_data = [
+        {"username": "admin", "email": "admin@dpft.local", "full_name": "System Admin", "role": sql_models.UserRole.ADMIN, "password": "admin123"},
+        {"username": "firdauszul", "email": "firdauszul@ijn.com.my", "full_name": "Muhammad Firdaus Bin Zulkiflee", "role": sql_models.UserRole.ADMIN, "password": "password123"},
+        {"username": "rahimr", "email": "rahimr@ijn.com.my", "full_name": "Rahim Rasimin", "role": sql_models.UserRole.HOD, "password": "password123"},
+        {"username": "khairulamri", "email": "khairulamri@ijn.com.my", "full_name": "Khairul Amri B. Zainudin", "role": sql_models.UserRole.STAFF, "password": "password123"},
+        {"username": "shukrishariff", "email": "shukrishariff@ijn.com.my", "full_name": "Mohd Shukri B. Shariff", "role": sql_models.UserRole.ADMIN, "password": "password123"},
+        {"username": "shahidahyusof", "email": "shahidahyusof@ijn.com.my", "full_name": "Norshahidah Bt Md Yusof", "role": sql_models.UserRole.STAFF, "password": "password123"},
+        {"username": "finance", "email": "finance@dpft.local", "full_name": "Finance Officer", "role": sql_models.UserRole.FINANCE, "password": "password123"},
     ]
+    
+    users = []
+    for u in users_data:
+        db_user = sql_models.User(
+            username=u["username"],
+            email=u["email"],
+            full_name=u["full_name"],
+            role=u["role"],
+            password_hash=get_password_hash(u["password"]),
+            department_id=it_dept.id
+        )
+        users.append(db_user)
+        
     db.add_all(users)
     db.commit()
 
