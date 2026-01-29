@@ -18,7 +18,7 @@ origins = [
 ]
 
 from app.db.database import get_db
-from app.api import auth, projects, portfolio, finance, users, documents
+from app.api import auth, projects, portfolio, finance, users, documents, categories
 
 app.add_middleware(
     CORSMiddleware,
