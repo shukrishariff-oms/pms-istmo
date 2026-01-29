@@ -20,6 +20,9 @@ class DocumentCreate(BaseModel):
     project_id: Optional[int] = None
 
 class DocumentUpdate(BaseModel):
+    title: Optional[str] = None
+    ref_number: Optional[str] = None
+    project_id: Optional[int] = None
     current_holder: Optional[str] = None
     status: Optional[str] = None
     description: Optional[str] = None

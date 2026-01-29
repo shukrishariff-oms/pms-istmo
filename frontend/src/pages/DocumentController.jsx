@@ -93,6 +93,9 @@ export default function DocumentController() {
         if (!selectedDoc) return;
         try {
             await updateDocument(selectedDoc.id, {
+                title: selectedDoc.title,
+                ref_number: selectedDoc.ref_number,
+                project_id: selectedDoc.project_id ? parseInt(selectedDoc.project_id) : null,
                 current_holder: selectedDoc.current_holder,
                 status: selectedDoc.status,
                 description: selectedDoc.description,
@@ -386,12 +389,30 @@ export default function DocumentController() {
                         <div className="w-2/3 p-6">
                             <h3 className="text-lg font-bold text-slate-900 mb-4">Transfer / Update Document</h3>
                             <div className="space-y-4">
-                                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 flex justify-between items-center">
-                                    <div>
-                                        <p className="text-[10px] font-bold text-blue-600 uppercase">Document Information</p>
-                                        <p className="text-sm font-bold text-slate-800 mt-0.5">{selectedDoc.title}</p>
+                                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 space-y-3">
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-[10px] font-bold text-blue-600 uppercase">Document Information (Edit if typo)</p>
+                                        <StatusBadge status={selectedDoc.status} />
                                     </div>
-                                    <StatusBadge status={selectedDoc.status} />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase">Title</label>
+                                            <input
+                                                className="w-full bg-transparent border-b border-blue-200 focus:border-blue-500 outline-none text-sm font-bold text-slate-800 py-0.5 transition-colors"
+                                                value={selectedDoc.title}
+                                                onChange={e => setSelectedDoc({ ...selectedDoc, title: e.target.value })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-400 uppercase">Reference Number</label>
+                                            <input
+                                                className="w-full bg-transparent border-b border-blue-200 focus:border-blue-500 outline-none text-sm font-bold text-slate-800 py-0.5 transition-colors"
+                                                value={selectedDoc.ref_number || ''}
+                                                onChange={e => setSelectedDoc({ ...selectedDoc, ref_number: e.target.value })}
+                                                placeholder="REF/YYYY/000"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
