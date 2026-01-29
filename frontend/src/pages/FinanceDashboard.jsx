@@ -3,7 +3,6 @@ import { getProjects, getProjectPayments } from '../services/projects';
 import {
     getDepartmentStats,
     createDepartmentExpense,
-    updateDepartmentBudget,
     getBudgetRequests,
     createBudgetRequest,
     approveBudgetRequest,
@@ -55,9 +54,6 @@ export default function FinanceDashboard() {
     const [newExpense, setNewExpense] = useState({ title: '', amount: '', category: 'General' });
     const [opexCategoryFilter, setOpexCategoryFilter] = useState('All');
 
-    // Budget Allocation
-    const [isBudgetModalOpen, setIsBudgetModalOpen] = useState(false);
-    const [categoryAllocations, setCategoryAllocations] = useState({});
 
     // Budget Requests Data
     const [requests, setRequests] = useState([]);
@@ -154,32 +150,6 @@ export default function FinanceDashboard() {
         }
     }
 
-    async function handleUpdateBudget() {
-        console.log("handleUpdateBudget triggered");
-        if (!deptStats || !deptStats.id) {
-            console.error("Missing deptStats.id", deptStats);
-            alert("Error: Department ID missing. Current state: " + JSON.stringify(deptStats));
-            return;
-        }
-        try {
-            const payload = FINANCE_CATEGORIES.map(cat => ({
-                category: cat,
-                amount: parseFloat(categoryAllocations[cat]) || 0
-            }));
-
-            console.log("Sending budget update payload:", JSON.stringify(payload));
-
-            const result = await updateDepartmentBudget(deptStats.id, payload);
-            console.log("Update success result:", result);
-
-            setIsBudgetModalOpen(false);
-            await loadData(true);
-            alert("Budgets updated successfully!");
-        } catch (err) {
-            console.error("Critical: Failed to update budget:", err);
-            alert("Failed to update budget: " + err.message);
-        }
-    }
 
     async function handleApproveRequest(id) {
         try {
@@ -496,21 +466,6 @@ export default function FinanceDashboard() {
                                 </div>
                             </div>
                             <div className="flex gap-2">
-                                {['admin', 'hod'].includes(role.toLowerCase()) && (
-                                    <button
-                                        onClick={() => {
-                                            const existing = {};
-                                            deptStats.category_budgets?.forEach(b => {
-                                                existing[b.category] = b.amount;
-                                            });
-                                            setCategoryAllocations(existing);
-                                            setIsBudgetModalOpen(true);
-                                        }}
-                                        className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors border border-blue-200"
-                                    >
-                                        <Wallet size={14} className="text-blue-500" /> Allocate Category Budget
-                                    </button>
-                                )}
                                 <button
                                     onClick={() => setIsExpenseModalOpen(true)}
                                     className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors"
@@ -828,50 +783,6 @@ export default function FinanceDashboard() {
                 )
             }
 
-            {/* Budget Allocation Modal */}
-            {isBudgetModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-xl shadow-2xl p-6 w-[500px] max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-900">Category Budget Allocation</h3>
-                                <p className="text-sm text-slate-500">Set the approved budget for each area.</p>
-                            </div>
-                            <button onClick={() => setIsBudgetModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X size={20} /></button>
-                        </div>
-
-                        <div className="space-y-4 py-4 border-y border-slate-100 my-4">
-                            {FINANCE_CATEGORIES.map(cat => (
-                                <div key={cat} className="flex items-center justify-between gap-4">
-                                    <label className="text-sm font-bold text-slate-700 w-1/2">{cat}</label>
-                                    <div className="relative w-1/2">
-                                        <span className="absolute left-3 top-2.5 text-slate-400 font-bold text-[10px]">MYR</span>
-                                        <input
-                                            type="number"
-                                            className="w-full border border-slate-200 rounded-lg py-2 pl-12 pr-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-900 text-right"
-                                            placeholder="0.00"
-                                            value={categoryAllocations[cat] || ''}
-                                            onChange={e => setCategoryAllocations({ ...categoryAllocations, [cat]: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="flex justify-between items-center mb-6 bg-slate-50 p-3 rounded-lg">
-                            <span className="text-sm font-bold text-slate-600">Total Allocation</span>
-                            <span className="text-lg font-bold text-blue-600">
-                                {currencyFormatter.format(FINANCE_CATEGORIES.reduce((sum, cat) => sum + (parseFloat(categoryAllocations[cat]) || 0), 0))}
-                            </span>
-                        </div>
-
-                        <div className="flex justify-end gap-2">
-                            <button onClick={() => setIsBudgetModalOpen(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
-                            <button onClick={handleUpdateBudget} className="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md transition-all active:scale-95">Update All Categories</button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div >
     );
 }
