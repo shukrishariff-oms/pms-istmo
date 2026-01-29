@@ -114,7 +114,7 @@ export default function DocumentController() {
             await deleteDocument(id);
             loadData();
         } catch (err) {
-            alert("Failed to delete");
+            alert(`Failed to delete: ${err.message || "Unknown error"}`);
         }
     }
 

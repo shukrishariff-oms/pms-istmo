@@ -33,7 +33,7 @@ export const createDocument = async (data) => {
 };
 
 export const updateDocument = async (id, data) => {
-    const response = await fetch(`${API_URL}/documents/${id}/`, {
+    const response = await fetch(`${API_URL}/documents/${id}`, {
         method: 'PUT',
         headers: getHeaders(),
         body: JSON.stringify(data)
@@ -46,7 +46,7 @@ export const updateDocument = async (id, data) => {
 };
 
 export const deleteDocument = async (id) => {
-    const response = await fetch(`${API_URL}/documents/${id}/`, {
+    const response = await fetch(`${API_URL}/documents/${id}`, {
         method: 'DELETE',
         headers: getHeaders()
     });
