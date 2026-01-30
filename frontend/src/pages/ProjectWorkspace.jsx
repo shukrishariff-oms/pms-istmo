@@ -146,6 +146,7 @@ export default function ProjectWorkspace() {
 
         async function loadData() {
             setLoading(true);
+            setError(null);
             try {
                 const [p, w, pay] = await Promise.all([
                     getProjectDetails(selectedProjectId),
@@ -157,6 +158,7 @@ export default function ProjectWorkspace() {
                 setPayments(pay);
             } catch (err) {
                 console.error(err);
+                setError("Failed to load project details. Please check your connection or database.");
             } finally {
                 setLoading(false);
             }

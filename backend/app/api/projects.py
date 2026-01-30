@@ -93,6 +93,7 @@ def create_task(project_id: int, task: project_schemas.TaskCreate, db: Session =
 
     new_task = sql_models.Task(
         wbs_id=task.wbs_id,
+        parent_id=task.parent_id,
         name=task.name,
         description=task.description,
         assignee_id=task.assignee_id,
