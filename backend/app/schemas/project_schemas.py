@@ -47,6 +47,10 @@ class WBSCreate(BaseModel):
     name: str
     parent_id: Optional[int] = None
 
+class WBSUpdate(BaseModel):
+    name: Optional[str] = None
+    parent_id: Optional[int] = None
+
 class TaskCreate(BaseModel):
     wbs_id: int
     name: str
@@ -56,6 +60,15 @@ class TaskCreate(BaseModel):
     planned_start: Optional[datetime] = None
     planned_end: Optional[datetime] = None
     due_date: datetime
+
+class TaskUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    assignee_id: Optional[int] = None
+    status: Optional[TaskStatus] = None
+    planned_start: Optional[datetime] = None
+    planned_end: Optional[datetime] = None
+    due_date: Optional[datetime] = None
 
 # --- Payment Schemas ---
 

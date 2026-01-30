@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask } from '../services/projects';
+import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask, updateProjectWBS, updateProjectTask } from '../services/projects';
+import { getUsers } from '../services/users';
 import {
     Calendar,
     CheckCircle2,
@@ -97,6 +98,22 @@ export default function ProjectWorkspace() {
         payment_type: 'capex',
         planned_date: '',
         status: 'unpaid'
+    });
+
+    // WBS Edit State
+    const [isEditWBSModalOpen, setIsEditWBSModalOpen] = useState(false);
+    const [selectedWBSItem, setSelectedWBSItem] = useState(null);
+    const [wbsFormData, setWbsFormData] = useState({ name: '' });
+
+    // Task Edit State
+    const [isEditTaskModalOpen, setIsEditTaskModalOpen] = useState(false);
+    const [selectedTaskItem, setSelectedTaskItem] = useState(null);
+    const [taskFormData, setTaskFormData] = useState({
+        name: '',
+        assignee_id: '',
+        status: '',
+        planned_start: '',
+        due_date: ''
     });
 
     useEffect(() => {
@@ -286,6 +303,59 @@ export default function ProjectWorkspace() {
             setWbs(w);
         } catch (err) {
             alert("Failed to delete task: " + err.message);
+        }
+    }
+
+    // --- WBS & Task Edit Handlers ---
+
+    function openEditWbsModal(phase) {
+        setSelectedWBSItem(phase);
+        setWbsFormData({ name: phase.name });
+        setIsEditWBSModalOpen(true);
+    }
+
+    async function handleSaveWbs() {
+        if (!wbsFormData.name) return;
+        try {
+            await updateProjectWBS(selectedWBSItem.id, wbsFormData);
+            const w = await getProjectWBS(selectedProjectId);
+            setWbs(w);
+            setIsEditWBSModalOpen(false);
+        } catch (err) {
+            alert("Failed to update phase: " + err.message);
+        }
+    }
+
+    function openEditTaskModal(task) {
+        setSelectedTaskItem(task);
+        setTaskFormData({
+            name: task.name,
+            assignee_id: task.assignee_id || '',
+            status: task.status,
+            planned_start: task.planned_start ? task.planned_start.split('T')[0] : '',
+            due_date: task.due_date ? task.due_date.split('T')[0] : ''
+        });
+        setIsEditTaskModalOpen(true);
+    }
+
+    async function handleSaveTask() {
+        if (!taskFormData.name || !taskFormData.due_date) {
+            alert("Name and Due Date are required");
+            return;
+        }
+        try {
+            const payload = {
+                ...taskFormData,
+                assignee_id: taskFormData.assignee_id ? parseInt(taskFormData.assignee_id) : null,
+                planned_start: taskFormData.planned_start ? new Date(taskFormData.planned_start).toISOString() : null,
+                due_date: new Date(taskFormData.due_date).toISOString()
+            };
+            await updateProjectTask(selectedTaskItem.id, payload);
+            const w = await getProjectWBS(selectedProjectId);
+            setWbs(w);
+            setIsEditTaskModalOpen(false);
+        } catch (err) {
+            alert("Failed to update task: " + err.message);
         }
     }
 
@@ -609,13 +679,22 @@ export default function ProjectWorkspace() {
                                                     {phase.name}
                                                 </td>
                                                 <td className="px-6 py-3 text-right">
-                                                    <button
-                                                        onClick={() => handleDeleteWBS(phase.id)}
-                                                        className="p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                                                        title="Delete Phase"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
+                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                                        <button
+                                                            onClick={() => openEditWbsModal(phase)}
+                                                            className="p-1 text-slate-300 hover:text-blue-500 transition-colors"
+                                                            title="Edit Phase"
+                                                        >
+                                                            <Pencil size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteWBS(phase.id)}
+                                                            className="p-1 text-slate-300 hover:text-red-500 transition-colors"
+                                                            title="Delete Phase"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                             {(phase.tasks || []).map((task, tIdx) => {
@@ -639,14 +718,25 @@ export default function ProjectWorkspace() {
                                                             {task.planned_start ? new Date(task.planned_start).toLocaleDateString() : '-'} - {new Date(task.due_date).toLocaleDateString()}
                                                         </td>
                                                         <td className="px-6 py-4 text-center relative">
-                                                            <StatusBadge status={task.status} />
-                                                            <button
-                                                                onClick={() => handleDeleteTask(task.id)}
-                                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
-                                                                title="Delete Task"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <StatusBadge status={task.status} />
+                                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                                    <button
+                                                                        onClick={() => openEditTaskModal(task)}
+                                                                        className="p-1 text-slate-300 hover:text-blue-500 transition-colors"
+                                                                        title="Edit Task"
+                                                                    >
+                                                                        <Pencil size={14} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => handleDeleteTask(task.id)}
+                                                                        className="p-1 text-slate-300 hover:text-red-500 transition-colors"
+                                                                        title="Delete Task"
+                                                                    >
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                </div>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                 );
@@ -1083,6 +1173,110 @@ export default function ProjectWorkspace() {
                             >
                                 {selectedPayment ? 'Update Payment' : 'Schedule Payment'}
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* WBS Phase Edit Modal */}
+            {isEditWBSModalOpen && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl p-8 w-[400px] animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-slate-900">Edit WBS Phase</h2>
+                            <button onClick={() => setIsEditWBSModalOpen(false)} className="text-slate-400 hover:text-red-500 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Phase Name</label>
+                                <input
+                                    className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 border-slate-200 outline-none font-bold"
+                                    value={wbsFormData.name}
+                                    onChange={e => setWbsFormData({ name: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                        <div className="mt-8 flex justify-end gap-3">
+                            <button onClick={() => setIsEditWBSModalOpen(false)} className="px-6 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-lg">Cancel</button>
+                            <button onClick={handleSaveWbs} className="px-6 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg shadow-lg">Save Changes</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Task Edit Modal */}
+            {isEditTaskModalOpen && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl p-8 w-[500px] animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-slate-900">Edit Task Details</h2>
+                            <button onClick={() => setIsEditTaskModalOpen(false)} className="text-slate-400 hover:text-red-500 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Task Name</label>
+                                <input
+                                    className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 border-slate-200 outline-none"
+                                    value={taskFormData.name}
+                                    onChange={e => setTaskFormData({ ...taskFormData, name: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Assignee</label>
+                                    <select
+                                        className="w-full border p-2 rounded-lg border-slate-200 outline-none bg-slate-50"
+                                        value={taskFormData.assignee_id}
+                                        onChange={e => setTaskFormData({ ...taskFormData, assignee_id: e.target.value })}
+                                    >
+                                        <option value="">Unassigned</option>
+                                        {users.map(u => (
+                                            <option key={u.id} value={u.id}>{u.full_name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
+                                    <select
+                                        className="w-full border p-2 rounded-lg border-slate-200 outline-none bg-slate-50"
+                                        value={taskFormData.status}
+                                        onChange={e => setTaskFormData({ ...taskFormData, status: e.target.value })}
+                                    >
+                                        <option value="not_started">Not Started</option>
+                                        <option value="in_progress">In Progress</option>
+                                        <option value="blocked">Blocked</option>
+                                        <option value="completed">Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Start Date</label>
+                                    <input
+                                        type="date"
+                                        className="w-full border p-2 rounded-lg border-slate-200 outline-none"
+                                        value={taskFormData.planned_start}
+                                        onChange={e => setTaskFormData({ ...taskFormData, planned_start: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Finish Date (Due)</label>
+                                    <input
+                                        type="date"
+                                        className="w-full border p-2 rounded-lg border-slate-200 outline-none"
+                                        value={taskFormData.due_date}
+                                        onChange={e => setTaskFormData({ ...taskFormData, due_date: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-8 flex justify-end gap-3">
+                            <button onClick={() => setIsEditTaskModalOpen(false)} className="px-6 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-lg">Cancel</button>
+                            <button onClick={handleSaveTask} className="px-6 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg shadow-lg shadow-blue-200">Save Changes</button>
                         </div>
                     </div>
                 </div>
