@@ -573,6 +573,15 @@ export default function ProjectWorkspace() {
                                                 ))}
                                             </select>
                                         </div>
+                                        {newTaskData.parent_id && (
+                                            <div className="bg-blue-50 p-2 rounded-lg border border-blue-100 mb-2">
+                                                <p className="text-[10px] uppercase tracking-wider font-bold text-blue-600 mb-1">Adding Sub-task to:</p>
+                                                <div className="flex items-center gap-2 text-sm font-semibold text-blue-900">
+                                                    <GitBranch size={14} />
+                                                    {wbs.flatMap(w => w.tasks || []).find(t => t.id === newTaskData.parent_id)?.name || 'Parent Task'}
+                                                </div>
+                                            </div>
+                                        )}
                                         <div>
                                             <label className="block text-xs font-semibold text-slate-500 mb-1">Task Name</label>
                                             <input
@@ -581,7 +590,7 @@ export default function ProjectWorkspace() {
                                                 className="w-full text-sm border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none"
                                                 value={newTaskData.name}
                                                 onChange={(e) => setNewTaskData({ ...newTaskData, name: e.target.value })}
-                                                placeholder="e.g. Server Configuration"
+                                                placeholder={newTaskData.parent_id ? "e.g. Sub-task details" : "e.g. Server Configuration"}
                                             />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
@@ -743,7 +752,7 @@ export default function ProjectWorkspace() {
                                                                                 <span className="font-medium">{task.name}</span>
                                                                                 <button
                                                                                     onClick={() => handleAddSubTask(task)}
-                                                                                    className="p-1 text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all"
+                                                                                    className="p-1 text-slate-400 hover:text-blue-500 bg-slate-100 rounded opacity-40 group-hover:opacity-100 transition-all ml-2"
                                                                                     title="Add Sub-task"
                                                                                 >
                                                                                     <GitBranch size={12} />
