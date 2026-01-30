@@ -21,11 +21,11 @@ class PaymentStatus(str, Enum):
     PAID = "paid"
 
 class UserResponse(BaseModel):
-    id: int
-    username: str
-    email: str
-    full_name: str
-    role: str
+    id: Optional[int] = None
+    username: Optional[str] = None
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -34,13 +34,13 @@ class TaskRead(BaseModel):
     id: int
     wbs_id: int
     parent_id: Optional[int] = None
-    name: str
+    name: Optional[str] = None
     description: Optional[str] = None
     assignee_id: Optional[int] = None
-    status: TaskStatus
+    status: Optional[TaskStatus] = None
     planned_start: Optional[datetime] = None
     planned_end: Optional[datetime] = None
-    due_date: datetime
+    due_date: Optional[datetime] = None
     assignee: Optional[UserResponse] = None
 
     class Config:
@@ -48,15 +48,15 @@ class TaskRead(BaseModel):
 
 class ProjectRead(BaseModel):
     id: int
-    code: str
-    name: str
+    code: Optional[str] = None
+    name: Optional[str] = None
     description: Optional[str] = None
-    budget_capex: float
-    budget_opex_allocation: float
-    status: str
-    start_date: datetime
-    end_date: datetime
-    owner_id: int
+    budget_capex: Optional[float] = 0.0
+    budget_opex_allocation: Optional[float] = 0.0
+    status: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    owner_id: Optional[int] = None
     assist_coordinator_id: Optional[int] = None
     owner: Optional[UserResponse] = None
     assist_coordinator: Optional[UserResponse] = None
