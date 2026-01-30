@@ -111,11 +111,8 @@ async def get_my_department_stats(
     # Calculate Total Expenses
     total_expenses = sum(e.amount for e in dept.expenses) if dept.expenses else 0.0
     
-    # Calculate Category Balances
+    # Calculate Category Balances from the source of truth (DepartmentBudget table)
     cat_budgets = {b.category: b.amount for b in dept.category_budgets}
-    for req in dept.budget_requests:
-        if req.status == models.RequestStatus.APPROVED:
-            cat_budgets[req.category] = cat_budgets.get(req.category, 0.0) + req.amount
             
     # Total Opex is sum of all category budgets
     total_budget = sum(cat_budgets.values())
