@@ -4,6 +4,7 @@ import { getProjects, createProject, deleteProject, updateProject } from '../ser
 import { getCategories, createCategory, deleteCategory } from '../services/categories';
 import { Users, Plus, ShieldCheck, Calendar, Wallet, Trash2, Pencil, Settings, FolderTree, X } from 'lucide-react';
 import clsx from 'clsx';
+import { formatDate } from '../utils/dateUtils';
 
 const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
 
@@ -407,7 +408,7 @@ export default function AdminDashboard() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-sm text-slate-500">
-                                        {new Date(p.start_date).toLocaleDateString()} - {new Date(p.end_date).toLocaleDateString()}
+                                        {formatDate(p.start_date)} - {formatDate(p.end_date)}
                                     </td>
                                     <td className="px-6 py-4 text-sm font-mono text-slate-700">
                                         {p.budget_capex.toLocaleString()}

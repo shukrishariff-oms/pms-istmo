@@ -11,6 +11,7 @@ import {
     TrendingUp
 } from 'lucide-react';
 import clsx from 'clsx';
+import { formatDate } from '../utils/dateUtils';
 
 const StatusBadge = ({ status }) => {
     const styles = {
@@ -160,7 +161,7 @@ export default function PortfolioPanel() {
                                                     <span className="text-xs font-bold text-slate-700">RM {p.amount.toLocaleString()}</span>
                                                     <span className="text-[10px] text-red-500 font-medium">Overdue</span>
                                                 </div>
-                                                <p className="text-[10px] text-slate-400 mt-1">Due: {new Date(p.due).toLocaleDateString()}</p>
+                                                <p className="text-[10px] text-slate-400 mt-1">Due: {formatDate(p.due)}</p>
                                             </div>
                                         ))
                                     ) : (

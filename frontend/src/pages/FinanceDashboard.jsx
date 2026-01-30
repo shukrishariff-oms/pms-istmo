@@ -32,6 +32,7 @@ import {
     Pencil
 } from 'lucide-react';
 import clsx from 'clsx';
+import { formatDate } from '../utils/dateUtils';
 
 const currencyFormatter = new Intl.NumberFormat('en-MY', {
     style: 'currency',
@@ -541,7 +542,7 @@ export default function FinanceDashboard() {
                                 <tbody className="divide-y divide-slate-100 text-sm">
                                     {ledgerWithBalance.length > 0 ? ledgerWithBalance.map((item, idx) => (
                                         <tr key={idx} className="hover:bg-slate-50">
-                                            <td className="px-6 py-3 text-slate-500 max-w-[100px] truncate">{new Date(item.date).toLocaleDateString()}</td>
+                                            <td className="px-6 py-3 text-slate-500 max-w-[100px] truncate">{formatDate(item.date)}</td>
                                             <td className="px-6 py-3">
                                                 <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase",
                                                     item.type === 'credit' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
@@ -635,7 +636,7 @@ export default function FinanceDashboard() {
                                             <div className="flex items-center gap-2 mt-1">
                                                 <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded font-medium">{req.category}</span>
                                                 <span className="text-slate-300">•</span>
-                                                <span className="text-xs text-slate-500 font-mono">{new Date(req.created_at).toLocaleDateString()}</span>
+                                                <span className="text-xs text-slate-500 font-mono">{formatDate(req.created_at)}</span>
                                             </div>
                                             {req.justification && (
                                                 <p className="text-sm text-slate-500 mt-2 bg-slate-50 p-2 rounded italic">"{req.justification}"</p>

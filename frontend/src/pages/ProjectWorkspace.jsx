@@ -21,6 +21,7 @@ import {
     GitBranch
 } from 'lucide-react';
 import clsx from 'clsx';
+import { formatDate } from '../utils/dateUtils';
 
 const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
 
@@ -458,16 +459,14 @@ export default function ProjectWorkspace() {
                 <div className="grid grid-cols-4 gap-6 mt-8 pt-6 border-t border-slate-100">
                     <div>
                         <p className="text-xs text-slate-400 font-medium">Start Date</p>
-                        <p className="text-sm font-semibold text-slate-700 mt-1 flex items-center gap-2">
-                            <Calendar size={14} />
-                            {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'N/A'}
+                        <p className="text-sm font-bold text-slate-900">
+                            {formatDate(project.start_date)}
                         </p>
                     </div>
-                    <div>
-                        <p className="text-xs text-slate-400 font-medium">End Date</p>
-                        <p className="text-sm font-semibold text-slate-700 mt-1 flex items-center gap-2">
-                            <Clock size={14} />
-                            {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}
+                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">End Date</p>
+                        <p className="text-sm font-bold text-slate-900">
+                            {formatDate(project.end_date)}
                         </p>
                     </div>
                     <div>
@@ -518,7 +517,7 @@ export default function ProjectWorkspace() {
                                     <div key={task.id} className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg flex justify-between items-center">
                                         <div>
                                             <p className="font-semibold text-slate-800">{task.name}</p>
-                                            <p className="text-xs text-slate-500">Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'N/A'}</p>
+                                            <p className="text-xs text-slate-500">Due: {formatDate(task.due_date)}</p>
                                         </div>
                                         <StatusBadge status={task.status} />
                                     </div>
@@ -542,7 +541,7 @@ export default function ProjectWorkspace() {
                                     <div key={task.id} className="p-4 bg-red-50/50 border border-red-100 rounded-lg flex justify-between items-center">
                                         <div>
                                             <p className="font-semibold text-slate-800">{task.name}</p>
-                                            <p className="text-xs text-red-500 font-medium">Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'N/A'}</p>
+                                            <p className="text-xs text-red-500 font-medium">Due: {formatDate(task.due_date)}</p>
                                         </div>
                                         <StatusBadge status={task.status || 'blocked'} />
                                     </div>
@@ -770,7 +769,7 @@ export default function ProjectWorkspace() {
                                                                             {duration}d
                                                                         </td>
                                                                         <td className="px-6 py-4 text-xs text-slate-500">
-                                                                            {task.planned_start ? new Date(task.planned_start).toLocaleDateString() : '-'} - {new Date(task.due_date).toLocaleDateString()}
+                                                                            {formatDate(task.planned_start)} - {formatDate(task.due_date)}
                                                                         </td>
                                                                         <td className="px-6 py-4 text-center relative">
                                                                             <div className="flex items-center justify-center gap-2">
@@ -816,7 +815,7 @@ export default function ProjectWorkspace() {
                             <div className="flex items-center gap-2 text-xs text-slate-600">
                                 <span className="font-bold">GANTT VISUALIZATION</span>
                                 <span className="h-4 w-px bg-slate-300 mx-1"></span>
-                                <span>Project Baseline: {new Date(project.start_date).toLocaleDateString()}</span>
+                                <span>Project Baseline: {formatDate(project.start_date)}</span>
                             </div>
                         </div>
                         {/* MS Project Header */}
@@ -879,10 +878,10 @@ export default function ProjectWorkspace() {
                                                                     {task.name}
                                                                 </div>
                                                                 <div className="w-24 p-1 border-r border-slate-200 text-slate-600">
-                                                                    {start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                                    {formatDate(task.planned_start)}
                                                                 </div>
                                                                 <div className="w-24 p-1 border-r border-slate-200 text-slate-600">
-                                                                    {end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                                    {formatDate(task.due_date)}
                                                                 </div>
 
                                                                 {/* Gantt Bar Visualization */}
@@ -973,7 +972,7 @@ export default function ProjectWorkspace() {
                                             <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600">
                                                 {pay.payment_type.toUpperCase()}
                                             </span>
-                                            <p className="text-xs text-slate-500 mt-1">Due: {new Date(pay.planned_date).toLocaleDateString()}</p>
+                                            <p className="text-xs text-slate-500 mt-1">Due: {formatDate(pay.planned_date)}</p>
                                         </td>
                                         <td className="px-6 py-4 text-right font-medium text-slate-900">
                                             {pay.amount.toLocaleString()}

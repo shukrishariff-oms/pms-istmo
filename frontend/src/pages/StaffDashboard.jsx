@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Briefcase, ListTodo, FileText, TrendingUp, Calendar, ArrowRight, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 import { getProjects } from '../services/projects';
 import clsx from 'clsx';
+import { formatDate } from '../utils/dateUtils';
 
 const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
 
@@ -88,7 +89,7 @@ export default function StaffDashboard() {
                 </div>
                 <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium border border-blue-100">
                     <Calendar size={16} />
-                    {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
             </header>
 
@@ -167,7 +168,7 @@ export default function StaffDashboard() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="font-semibold text-slate-900 truncate">{t.name}</p>
-                                    <p className="text-xs text-slate-500">Due: {new Date(t.due_date).toLocaleDateString()}</p>
+                                    <p className="text-xs text-slate-500">Due: {formatDate(t.due_date)}</p>
                                 </div>
                                 <span className={clsx("text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border",
                                     t.status === 'blocked' ? "bg-red-50 text-red-600 border-red-100" :

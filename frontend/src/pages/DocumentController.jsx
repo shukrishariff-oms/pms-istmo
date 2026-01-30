@@ -17,6 +17,7 @@ import {
     ArrowDownRight
 } from 'lucide-react';
 import clsx from 'clsx';
+import { formatDate } from '../utils/dateUtils';
 
 const StatusBadge = ({ status }) => {
     const styles = {
@@ -358,18 +359,18 @@ export default function DocumentController() {
                                             <div className="flex flex-col gap-0.5 mt-1 border-l-2 border-slate-100 pl-2 ml-[-21px]">
                                                 <p className="text-[10px] text-slate-500 flex items-center gap-1">
                                                     <ArrowDownRight size={10} className="text-slate-400" />
-                                                    <span className="font-medium">Received:</span> {new Date(log.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                                    <span className="font-medium">Received:</span> {new Date(log.timestamp).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
                                                 </p>
                                                 {log.signed_at && (
                                                     <p className="text-[10px] text-indigo-600 font-bold flex items-center gap-1">
                                                         <CheckCircle2 size={10} />
-                                                        <span>Signed:</span> {new Date(log.signed_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                                        <span>Signed:</span> {new Date(log.signed_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
                                                     </p>
                                                 )}
                                                 {nextLog && (
                                                     <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
                                                         <ArrowRight size={10} />
-                                                        <span>Transferred:</span> {new Date(nextLog.timestamp).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                                        <span>Transferred:</span> {new Date(nextLog.timestamp).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
                                                     </p>
                                                 )}
                                                 {!log.signed_at && !nextLog && (
