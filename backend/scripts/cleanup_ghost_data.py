@@ -5,7 +5,6 @@ def cleanup_ghost_data():
     # Database path
     db_path = os.path.join("storage", "pms.db")
     if not os.path.exists(db_path):
-        # Fallback for local dev if run from root
         db_path = os.path.join("backend", "storage", "pms.db")
         if not os.path.exists(db_path):
              print(f"Error: Database not found at {db_path}")
@@ -16,23 +15,22 @@ def cleanup_ghost_data():
     cursor = conn.cursor()
 
     try:
-        # 1. Identify entries for KITCHEN SUPPLY
-        cursor.execute("SELECT id, department_id, amount FROM department_budgets WHERE category = 'KITCHEN SUPPLY'")
+        # Target exact match found in inspect_db
+        target_category = 'Kitchen Supply'
+        
+        cursor.execute("SELECT id, department_id, amount FROM department_budgets WHERE category = ?", (target_category,))
         rows = cursor.fetchall()
         
         if not rows:
-            print("No ghost data found for category 'KITCHEN SUPPLY'.")
+            print(f"No ghost data found for category '{target_category}'.")
             return
 
-        print(f"Found {len(rows)} ghost entries for 'KITCHEN SUPPLY':")
-        total_ghost_amount = 0
+        print(f"Found {len(rows)} ghost entries for '{target_category}':")
         for row in rows:
-            print(f" - ID: {row[0]}, Dept: {row[1]}, Amount: RM {row[2]}")
-            total_ghost_amount += row[2]
+            print(f" - ID: {row[0]}, Dept ID: {row[1]}, Amount: RM {row[2]}")
 
-        # 2. Delete the entries
-        print(f"\nDeleting ghost entries totaling RM {total_ghost_amount}...")
-        cursor.execute("DELETE FROM department_budgets WHERE category = 'KITCHEN SUPPLY'")
+        print(f"\nDeleting entries for '{target_category}'...")
+        cursor.execute("DELETE FROM department_budgets WHERE category = ?", (target_category,))
         
         conn.commit()
         print("Cleanup successful! Ghost data has been removed.")
