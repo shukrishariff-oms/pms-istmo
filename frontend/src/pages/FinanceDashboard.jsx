@@ -274,7 +274,19 @@ export default function FinanceDashboard() {
     });
 
     // Unique Categories
-    const uniqueCategories = ['All', ...new Set(allLedgerItems.map(i => i.category).filter(Boolean))];
+    const budgetCategories = (deptStats.category_budgets || []).map(b => b.category || "Uncategorized");
+    const filteredExpenses = (deptStats.expenses || []).filter(e =>
+        selectedCategory === 'All' || (e.category || "Uncategorized") === selectedCategory
+    );
+    const expenseCategories = filteredExpenses.map(e => e.category || "Uncategorized");
+    const requestCategories = (deptStats.requests || []).filter(r => r.status === 'approved').map(r => r.category || "Uncategorized");
+
+    const uniqueCategories = ['All', ...new Set([
+        ...flatCategories,
+        ...budgetCategories,
+        ...expenseCategories,
+        ...requestCategories
+    ])];
 
     const flatCategories = Array.isArray(categories) ? categories.reduce((acc, cat) => {
         if (!cat || !cat.name) return acc;
@@ -436,9 +448,9 @@ export default function FinanceDashboard() {
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 divide-x divide-slate-100 border-b border-slate-100">
                             {uniqueCategories.filter(c => c !== 'All').map(cat => {
-                                const budget = deptStats.category_budgets?.find(b => b.category === cat)?.amount || 0;
+                                const budget = deptStats.category_budgets?.find(b => (b.category || "Uncategorized") === cat)?.amount || 0;
                                 const spent = (deptStats.expenses || [])
-                                    .filter(e => e.category === cat)
+                                    .filter(e => (e.category || "Uncategorized") === cat)
                                     .reduce((sum, e) => sum + e.amount, 0);
                                 const remaining = budget - spent;
 
