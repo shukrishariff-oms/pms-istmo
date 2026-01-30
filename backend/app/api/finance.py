@@ -317,13 +317,25 @@ async def delete_budget_request(
     if current_user.role not in [models.UserRole.ADMIN, models.UserRole.HOD, models.UserRole.FINANCE]:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    request = db.query(models.BudgetRequest).filter(models.BudgetRequest.id == request_id).first()
-    if not request:
+    req = db.query(models.BudgetRequest).filter(models.BudgetRequest.id == request_id).first()
+    if not req:
         raise HTTPException(status_code=404, detail="Request not found")
         
-    db.delete(request)
+    # If the request was approved, we MUST reverse the budget allocation
+    if req.status == models.RequestStatus.APPROVED:
+        cat_budget = db.query(models.DepartmentBudget).filter(
+            models.DepartmentBudget.department_id == req.department_id,
+            models.DepartmentBudget.category == req.category
+        ).first()
+        
+        if cat_budget:
+            cat_budget.amount -= req.amount
+            if cat_budget.amount < 0:
+                cat_budget.amount = 0.0
+                
+    db.delete(req)
     db.commit()
-    return {"message": "Budget request deleted"}
+    return {"message": "Budget request deleted and budget updated"}
 
 @router.put("/expenses/{expense_id}")
 async def update_department_expense(
