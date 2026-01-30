@@ -488,7 +488,12 @@ export default function FinanceDashboard() {
                                 </h3>
                                 {/* Category Tabs */}
                                 <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
-                                    {uniqueCategories.map(cat => (
+                                    {uniqueCategories.filter(cat => {
+                                        if (cat === 'All') return true;
+                                        const hasRequest = (deptStats?.requests || []).some(r => (r.category || "Uncategorized") === cat);
+                                        const budget = (deptStats?.category_budgets || []).find(b => (b.category || "Uncategorized") === cat)?.amount || 0;
+                                        return hasRequest || budget > 0;
+                                    }).map(cat => (
                                         <button
                                             key={cat}
                                             onClick={() => setOpexCategoryFilter(cat)}
