@@ -65,7 +65,7 @@ def get_project_details(project_id: int, db: Session = Depends(get_db)):
 
 # --- WBS & Tasks ---
 
-@router.get("/projects/{project_id}/wbs", tags=["WBS"])
+@router.get("/projects/{project_id}/wbs", tags=["WBS"], response_model=List[project_schemas.WBSRead])
 def get_project_wbs(project_id: int, db: Session = Depends(get_db)):
     wbs_items = db.query(sql_models.WBS).options(
         joinedload(sql_models.WBS.tasks).joinedload(sql_models.Task.assignee)

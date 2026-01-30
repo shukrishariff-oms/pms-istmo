@@ -19,6 +19,41 @@ class PaymentStatus(str, Enum):
     VERIFIED = "verified"
     APPROVED = "approved"
     PAID = "paid"
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    full_name: str
+    role: str
+
+    class Config:
+        from_attributes = True
+
+class TaskRead(BaseModel):
+    id: int
+    wbs_id: int
+    parent_id: Optional[int] = None
+    name: str
+    description: Optional[str] = None
+    assignee_id: Optional[int] = None
+    status: TaskStatus
+    planned_start: Optional[datetime] = None
+    due_date: datetime
+    assignee: Optional[UserResponse] = None
+
+    class Config:
+        from_attributes = True
+
+class WBSRead(BaseModel):
+    id: int
+    project_id: int
+    name: str
+    tasks: List[TaskRead] = []
+
+    class Config:
+        from_attributes = True
+
 class ProjectCreate(BaseModel):
     code: str
     name: str
