@@ -704,16 +704,19 @@ export default function ProjectWorkspace() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {wbs.map((phase, pIdx) => (
+                                    {[...wbs].sort((a, b) => a.id - b.id).map((phase, pIdx) => (
                                         <>
-                                            <tr key={`phase-${phase.id}`} className="group bg-slate-50/50">
-                                                <td className="px-6 py-3 text-xs font-bold text-slate-400 text-center">{pIdx + 1}</td>
-                                                <td colSpan={4} className="px-6 py-3 font-bold text-slate-800 flex items-center gap-2">
-                                                    <Layers size={16} className="text-slate-500" />
-                                                    {phase.name}
+                                            <tr key={`phase-${phase.id}`} className="bg-slate-50/50 border-y border-slate-100">
+                                                <td className="px-6 py-4 text-xs text-slate-400 font-bold text-center">{pIdx + 1}</td>
+                                                <td className="px-6 py-4 text-sm font-bold text-slate-800 uppercase tracking-tight">
+                                                    <div className="flex items-center gap-2">
+                                                        <Layers size={14} className="text-slate-400" />
+                                                        {phase.name}
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-3 text-right">
-                                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                                <td className="px-6 py-4" colSpan={3}></td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <div className="flex items-center justify-center gap-2">
                                                         <button
                                                             onClick={() => openEditWbsModal(phase)}
                                                             className="p-1 text-slate-300 hover:text-blue-500 transition-colors"
@@ -735,6 +738,7 @@ export default function ProjectWorkspace() {
                                                 const renderRecursive = (items, parentId = null, depth = 0, prefix = '') => {
                                                     return items
                                                         .filter(t => t.parent_id === parentId)
+                                                        .sort((a, b) => a.id - b.id)
                                                         .map((task, tIdx) => {
                                                             const currentPrefix = prefix ? `${prefix}.${tIdx + 1}` : `${pIdx + 1}.${tIdx + 1}`;
                                                             const start = new Date(task.planned_start || task.created_at || Date.now());
@@ -827,7 +831,7 @@ export default function ProjectWorkspace() {
 
                         {/* Grid Rows */}
                         <div className="overflow-y-auto flex-1 bg-white">
-                            {wbs.map((phase, pIdx) => (
+                            {[...wbs].sort((a, b) => a.id - b.id).map((phase, pIdx) => (
                                 <div key={`phase-${phase.id}`}>
                                     {/* Phase Row */}
                                     <div className="flex text-xs border-b border-slate-100 bg-slate-50/80 font-bold hover:bg-blue-50">
@@ -848,6 +852,7 @@ export default function ProjectWorkspace() {
                                         const renderTimelineRecursive = (items, parentId = null, depth = 0, prefix = '') => {
                                             return items
                                                 .filter(t => t.parent_id === parentId)
+                                                .sort((a, b) => a.id - b.id)
                                                 .map((task, tIdx) => {
                                                     const currentPrefix = prefix ? `${prefix}.${tIdx + 1}` : `${pIdx + 1}.${tIdx + 1}`;
                                                     const start = new Date(task.planned_start || task.created_at || Date.now());
