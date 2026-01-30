@@ -32,4 +32,5 @@ RUN mkdir -p /app/storage
 EXPOSE 8000
 
 # Command to run the application
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# We run the migration script first to ensure database columns like parent_id are present
+CMD ["sh", "-c", "python scripts/migrate_subtasks.py && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"]
