@@ -76,6 +76,25 @@ export const createProjectPayment = async (id, data) => {
     return response.json();
 };
 
+export const updateProjectPayment = async (paymentId, data) => {
+    const response = await fetch(`${API_URL}/payments/${paymentId}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error("Failed to update payment");
+    return response.json();
+};
+
+export const deleteProjectPayment = async (paymentId) => {
+    const response = await fetch(`${API_URL}/payments/${paymentId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    });
+    if (!response.ok) throw new Error("Failed to delete payment");
+    return response.json();
+};
+
 export const deleteProject = async (id) => {
     const response = await fetch(`${API_URL}/projects/${id}`, {
         method: 'DELETE',

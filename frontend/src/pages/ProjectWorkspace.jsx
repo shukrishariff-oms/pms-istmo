@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject } from '../services/projects';
+import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment } from '../services/projects';
 import {
     Calendar,
     CheckCircle2,
@@ -15,7 +15,8 @@ import {
     Plus,
     Pencil,
     X,
-    Briefcase
+    Briefcase,
+    Trash2
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -84,6 +85,18 @@ export default function ProjectWorkspace() {
         name: '',
         start_date: '',
         end_date: ''
+    });
+
+    // Payment Modal State
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [selectedPayment, setSelectedPayment] = useState(null);
+    const [paymentFormData, setPaymentFormData] = useState({
+        title: '',
+        vendor_name: '',
+        amount: 0,
+        payment_type: 'capex',
+        planned_date: '',
+        status: 'unpaid'
     });
 
     useEffect(() => {
@@ -180,6 +193,77 @@ export default function ProjectWorkspace() {
             alert("Project updated successfully!");
         } catch (err) {
             alert("Failed to update project: " + err.message);
+        }
+    }
+
+    // --- Payment Handlers ---
+
+    function openPaymentModal(pay = null) {
+        if (pay) {
+            setSelectedPayment(pay);
+            setPaymentFormData({
+                title: pay.title,
+                vendor_name: pay.vendor_name,
+                amount: pay.amount,
+                payment_type: pay.payment_type,
+                planned_date: pay.planned_date.split('T')[0],
+                status: pay.status
+            });
+        } else {
+            setSelectedPayment(null);
+            setPaymentFormData({
+                title: '',
+                vendor_name: 'TBD Vendor',
+                amount: 0,
+                payment_type: 'capex',
+                planned_date: new Date().toISOString().split('T')[0],
+                status: 'unpaid'
+            });
+        }
+        setIsPaymentModalOpen(true);
+    }
+
+    async function handleSavePayment() {
+        try {
+            const payload = {
+                ...paymentFormData,
+                amount: parseFloat(paymentFormData.amount),
+                planned_date: new Date(paymentFormData.planned_date).toISOString()
+            };
+
+            if (selectedPayment) {
+                await updateProjectPayment(selectedPayment.id, payload);
+            } else {
+                await createProjectPayment(selectedProjectId, payload);
+            }
+
+            const pay = await getProjectPayments(selectedProjectId);
+            setPayments(pay);
+            setIsPaymentModalOpen(false);
+        } catch (err) {
+            alert("Failed to save payment: " + err.message);
+        }
+    }
+
+    async function handleTogglePaymentStatus(pay) {
+        try {
+            const nextStatus = pay.status === 'paid' ? 'unpaid' : 'paid';
+            await updateProjectPayment(pay.id, { status: nextStatus });
+            const updatedPay = await getProjectPayments(selectedProjectId);
+            setPayments(updatedPay);
+        } catch (err) {
+            alert("Failed to update status: " + err.message);
+        }
+    }
+
+    async function handleDeletePayment(paymentId) {
+        if (!confirm("Are you sure you want to delete this payment?")) return;
+        try {
+            await deleteProjectPayment(paymentId);
+            const pay = await getProjectPayments(selectedProjectId);
+            setPayments(pay);
+        } catch (err) {
+            alert("Failed to delete: " + err.message);
         }
     }
 
@@ -661,23 +745,7 @@ export default function ProjectWorkspace() {
 
                         <div className="p-4 border-b border-slate-100 bg-white flex justify-end">
                             <button
-                                onClick={async () => {
-                                    const title = prompt("Payment Title:");
-                                    if (!title) return;
-                                    const amount = prompt("Amount (MYR):", "10000");
-                                    const type = prompt("Type (capex/opex):", "capex");
-
-                                    await createProjectPayment(selectedProjectId, {
-                                        title: title,
-                                        vendor_name: "TBD Vendor",
-                                        amount: parseFloat(amount),
-                                        payment_type: type.toLowerCase(),
-                                        planned_date: new Date().toISOString(),
-                                        status: "unpaid"
-                                    });
-                                    const pay = await getProjectPayments(selectedProjectId);
-                                    setPayments(pay);
-                                }}
+                                onClick={() => openPaymentModal()}
                                 className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm"
                             >
                                 <Plus size={16} /> Schedule Payment
@@ -699,7 +767,7 @@ export default function ProjectWorkspace() {
                                     <tr key={pay.id} className="group hover:bg-slate-50">
                                         <td className="px-6 py-4">
                                             <p className="font-semibold text-slate-900 text-sm">{pay.title}</p>
-                                            <p className="text-xs text-slate-500 mt-1">{pay.vendor_name}</p>
+                                            <p className="text-xs text-slate-500 mt-1">{pay.vendor_name || 'TBD Vendor'}</p>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600">
@@ -711,12 +779,31 @@ export default function ProjectWorkspace() {
                                             {pay.amount.toLocaleString()}
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <StatusBadge status={pay.status} />
+                                            <button
+                                                onClick={() => handleTogglePaymentStatus(pay)}
+                                                className="hover:scale-105 transition-transform"
+                                                title="Click to toggle status"
+                                            >
+                                                <StatusBadge status={pay.status} />
+                                            </button>
                                         </td>
                                         <td className="px-6 py-4 text-right">
-                                            <button className="text-slate-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <ArrowRight size={18} />
-                                            </button>
+                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => openPaymentModal(pay)}
+                                                    className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
+                                                    title="Edit Payment"
+                                                >
+                                                    <Pencil size={16} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeletePayment(pay.id)}
+                                                    className="p-1 text-slate-400 hover:text-red-600 transition-colors"
+                                                    title="Delete Payment"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -855,6 +942,108 @@ export default function ProjectWorkspace() {
                             <button onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium">Cancel</button>
                             <button onClick={handleUpdateProject} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md transition-all active:scale-95">
                                 Update Project
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Payment Modal */}
+            {isPaymentModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl p-8 w-[500px] animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-bold text-slate-900">
+                                {selectedPayment ? 'Edit Payment' : 'Schedule New Payment'}
+                            </h2>
+                            <button onClick={() => setIsPaymentModalOpen(false)} className="text-slate-400 hover:text-red-500 transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Payment Title / Milestone</label>
+                                <input
+                                    className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 border-slate-200 outline-none"
+                                    value={paymentFormData.title}
+                                    onChange={e => setPaymentFormData({ ...paymentFormData, title: e.target.value })}
+                                    placeholder="e.g. Mobilization 10%"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Vendor Name</label>
+                                <input
+                                    className="w-full border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 border-slate-200 outline-none"
+                                    value={paymentFormData.vendor_name}
+                                    onChange={e => setPaymentFormData({ ...paymentFormData, vendor_name: e.target.value })}
+                                    placeholder="e.g. Acme Corp"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Amount (MYR)</label>
+                                    <input
+                                        type="number"
+                                        className="w-full border p-2 rounded-lg border-slate-200 outline-none"
+                                        value={paymentFormData.amount}
+                                        onChange={e => setPaymentFormData({ ...paymentFormData, amount: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Planned Date (Due)</label>
+                                    <input
+                                        type="date"
+                                        className="w-full border p-2 rounded-lg border-slate-200 outline-none"
+                                        value={paymentFormData.planned_date}
+                                        onChange={e => setPaymentFormData({ ...paymentFormData, planned_date: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Payment Type</label>
+                                    <select
+                                        className="w-full border p-2 rounded-lg bg-slate-50 border-slate-200 outline-none"
+                                        value={paymentFormData.payment_type}
+                                        onChange={e => setPaymentFormData({ ...paymentFormData, payment_type: e.target.value })}
+                                    >
+                                        <option value="capex">CAPEX</option>
+                                        <option value="opex">OPEX</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
+                                    <select
+                                        className="w-full border p-2 rounded-lg bg-slate-50 border-slate-200 outline-none"
+                                        value={paymentFormData.status}
+                                        onChange={e => setPaymentFormData({ ...paymentFormData, status: e.target.value })}
+                                    >
+                                        <option value="unpaid">Unpaid</option>
+                                        <option value="claimed">Claimed</option>
+                                        <option value="verified">Verified</option>
+                                        <option value="approved">Approved</option>
+                                        <option value="paid">Paid</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex justify-end gap-3">
+                            <button
+                                onClick={() => setIsPaymentModalOpen(false)}
+                                className="px-6 py-2 text-sm font-bold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSavePayment}
+                                className="px-6 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg shadow-blue-200 transition-all active:scale-95"
+                            >
+                                {selectedPayment ? 'Update Payment' : 'Schedule Payment'}
                             </button>
                         </div>
                     </div>

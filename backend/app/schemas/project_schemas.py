@@ -66,3 +66,11 @@ class PaymentCreate(BaseModel):
     payment_type: PaymentType
     planned_date: datetime
     status: PaymentStatus = PaymentStatus.UNPAID
+
+class PaymentUpdate(BaseModel):
+    title: Optional[str] = None
+    vendor_name: Optional[str] = None
+    amount: Optional[float] = None
+    payment_type: Optional[PaymentType] = None
+    planned_date: Optional[datetime] = None
+    status: Optional[PaymentStatus] = None

@@ -131,6 +131,34 @@ def create_payment(project_id: int, payment: project_schemas.PaymentCreate, db: 
     db.refresh(new_payment)
     return new_payment
 
+@router.put("/payments/{payment_id}", tags=["Finance"])
+def update_payment(
+    payment_id: int, 
+    payment_update: project_schemas.PaymentUpdate, 
+    db: Session = Depends(get_db)
+):
+    payment = db.query(sql_models.Payment).filter(sql_models.Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    update_data = payment_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(payment, key, value)
+    
+    db.commit()
+    db.refresh(payment)
+    return payment
+
+@router.delete("/payments/{payment_id}", tags=["Finance"])
+def delete_payment(payment_id: int, db: Session = Depends(get_db)):
+    payment = db.query(sql_models.Payment).filter(sql_models.Payment.id == payment_id).first()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    db.delete(payment)
+    db.commit()
+    return {"message": "Payment deleted successfully"}
+
 @router.delete("/projects/{project_id}", tags=["Projects"])
 def delete_project(project_id: int, db: Session = Depends(get_db)):
     project = db.query(sql_models.Project).filter(sql_models.Project.id == project_id).first()
