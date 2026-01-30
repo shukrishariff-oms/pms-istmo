@@ -508,7 +508,15 @@ export default function FinanceDashboard() {
                             </div>
                             <div className="flex gap-2">
                                 <button
-                                    onClick={() => setIsExpenseModalOpen(true)}
+                                    onClick={() => {
+                                        setNewExpense({
+                                            title: '',
+                                            amount: '',
+                                            category: flatCategories.length > 0 ? flatCategories[0] : 'General',
+                                            date: new Date().toISOString().split('T')[0]
+                                        });
+                                        setIsExpenseModalOpen(true);
+                                    }}
                                     className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800 transition-colors"
                                 >
                                     <Plus size={14} /> Log Expense
@@ -596,7 +604,15 @@ export default function FinanceDashboard() {
                                 <p className="text-blue-600 text-sm">Request additional OPEX budget allocation here. Approvals add to your usable balance.</p>
                             </div>
                             <button
-                                onClick={() => setIsRequestModalOpen(true)}
+                                onClick={() => {
+                                    setNewRequest({
+                                        title: '',
+                                        amount: '',
+                                        category: flatCategories.length > 0 ? flatCategories[0] : 'General',
+                                        justification: ''
+                                    });
+                                    setIsRequestModalOpen(true);
+                                }}
                                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 shadow-md transition-all"
                             >
                                 <Plus size={16} /> New Request
