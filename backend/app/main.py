@@ -17,8 +17,12 @@ origins = [
     "*", # Allow all for initial deployment ease
 ]
 
-from app.db.database import get_db
+from app.db.database import get_db, engine, Base
+from app.models import sql_models
 from app.api import auth, projects, portfolio, finance, users, documents, categories
+
+# Create tables on startup
+Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
