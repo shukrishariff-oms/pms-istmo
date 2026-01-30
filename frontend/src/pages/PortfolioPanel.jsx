@@ -21,7 +21,7 @@ const StatusBadge = ({ status }) => {
     };
     return (
         <span className={clsx("px-2 py-1 rounded text-xs font-bold uppercase tracking-wide", styles[status] || "bg-slate-100 text-slate-600")}>
-            {status?.replace('_', ' ')}
+            {(status || '').replace('_', ' ')}
         </span>
     );
 };

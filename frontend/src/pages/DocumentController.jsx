@@ -30,7 +30,7 @@ const StatusBadge = ({ status }) => {
 
     return (
         <span className={clsx("px-2.5 py-0.5 rounded-full text-xs font-medium border uppercase tracking-wider", styles[status] || styles.pending)}>
-            {status?.replace('_', ' ')}
+            {(status || 'pending').replace('_', ' ')}
         </span>
     );
 };

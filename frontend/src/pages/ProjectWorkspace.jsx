@@ -42,7 +42,7 @@ const StatusBadge = ({ status }) => {
 
     return (
         <span className={clsx("px-2.5 py-0.5 rounded-full text-xs font-medium border", styles[status] || styles.not_started)}>
-            {status?.replace('_', ' ').toUpperCase()}
+            {(status || 'not_started').replace('_', ' ').toUpperCase()}
         </span>
     );
 };
@@ -241,7 +241,7 @@ export default function ProjectWorkspace() {
                     <div className="flex flex-col items-end gap-3">
                         <div className="text-right">
                             <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Budget</p>
-                            <p className="text-2xl font-bold text-slate-900">MYR {(project.budget_capex + project.budget_opex_allocation).toLocaleString()}</p>
+                            <p className="text-2xl font-bold text-slate-900">MYR {((project.budget_capex || 0) + (project.budget_opex_allocation || 0)).toLocaleString()}</p>
                         </div>
                         {localStorage.getItem('role') === 'admin' && (
                             <button
@@ -260,14 +260,14 @@ export default function ProjectWorkspace() {
                         <p className="text-xs text-slate-400 font-medium">Start Date</p>
                         <p className="text-sm font-semibold text-slate-700 mt-1 flex items-center gap-2">
                             <Calendar size={14} />
-                            {new Date(project.start_date).toLocaleDateString()}
+                            {project.start_date ? new Date(project.start_date).toLocaleDateString() : 'N/A'}
                         </p>
                     </div>
                     <div>
                         <p className="text-xs text-slate-400 font-medium">End Date</p>
                         <p className="text-sm font-semibold text-slate-700 mt-1 flex items-center gap-2">
                             <Clock size={14} />
-                            {new Date(project.end_date).toLocaleDateString()}
+                            {project.end_date ? new Date(project.end_date).toLocaleDateString() : 'N/A'}
                         </p>
                     </div>
                     <div>
@@ -314,16 +314,16 @@ export default function ProjectWorkspace() {
                                 Current Focus
                             </h3>
                             <div className="space-y-4">
-                                {wbs.flatMap(w => w.tasks).filter(t => t.status === 'in_progress').map(task => (
+                                {wbs.flatMap(w => w.tasks || []).filter(t => t.status === 'in_progress').map(task => (
                                     <div key={task.id} className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg flex justify-between items-center">
                                         <div>
                                             <p className="font-semibold text-slate-800">{task.name}</p>
-                                            <p className="text-xs text-slate-500">Due: {new Date(task.due_date).toLocaleDateString()}</p>
+                                            <p className="text-xs text-slate-500">Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'N/A'}</p>
                                         </div>
                                         <StatusBadge status={task.status} />
                                     </div>
                                 ))}
-                                {wbs.flatMap(w => w.tasks).filter(t => t.status === 'in_progress').length === 0 && (
+                                {wbs.flatMap(w => w.tasks || []).filter(t => t.status === 'in_progress').length === 0 && (
                                     <p className="text-slate-400 italic">No tasks currently in progress.</p>
                                 )}
                             </div>
@@ -335,13 +335,16 @@ export default function ProjectWorkspace() {
                                 At Risk / Delayed
                             </h3>
                             <div className="space-y-4">
-                                {wbs.flatMap(w => w.tasks).filter(t => ['blocked', 'delayed'].includes(t.status) || new Date(t.due_date) < new Date()).map(task => (
+                                {wbs.flatMap(w => w.tasks || []).filter(t =>
+                                    ['blocked', 'delayed'].includes(t.status) ||
+                                    (t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed')
+                                ).map(task => (
                                     <div key={task.id} className="p-4 bg-red-50/50 border border-red-100 rounded-lg flex justify-between items-center">
                                         <div>
                                             <p className="font-semibold text-slate-800">{task.name}</p>
-                                            <p className="text-xs text-red-500 font-medium">Due: {new Date(task.due_date).toLocaleDateString()}</p>
+                                            <p className="text-xs text-red-500 font-medium">Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'N/A'}</p>
                                         </div>
-                                        <StatusBadge status={'blocked'} />
+                                        <StatusBadge status={task.status || 'blocked'} />
                                     </div>
                                 ))}
                             </div>
@@ -499,7 +502,7 @@ export default function ProjectWorkspace() {
                                                     {phase.name}
                                                 </td>
                                             </tr>
-                                            {phase.tasks.map((task, tIdx) => {
+                                            {(phase.tasks || []).map((task, tIdx) => {
                                                 const start = new Date(task.planned_start || task.created_at || Date.now());
                                                 const end = new Date(task.due_date);
                                                 const duration = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
