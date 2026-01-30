@@ -39,8 +39,27 @@ class TaskRead(BaseModel):
     assignee_id: Optional[int] = None
     status: TaskStatus
     planned_start: Optional[datetime] = None
+    planned_end: Optional[datetime] = None
     due_date: datetime
     assignee: Optional[UserResponse] = None
+
+    class Config:
+        from_attributes = True
+
+class ProjectRead(BaseModel):
+    id: int
+    code: str
+    name: str
+    description: Optional[str] = None
+    budget_capex: float
+    budget_opex_allocation: float
+    status: str
+    start_date: datetime
+    end_date: datetime
+    owner_id: int
+    assist_coordinator_id: Optional[int] = None
+    owner: Optional[UserResponse] = None
+    assist_coordinator: Optional[UserResponse] = None
 
     class Config:
         from_attributes = True

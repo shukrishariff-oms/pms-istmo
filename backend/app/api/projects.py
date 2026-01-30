@@ -13,7 +13,7 @@ router = APIRouter()
 
 from sqlalchemy import or_
 
-@router.get("/projects", tags=["Projects"])
+@router.get("/projects", tags=["Projects"], response_model=List[project_schemas.ProjectRead])
 def get_projects(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
     query = db.query(sql_models.Project).options(
         joinedload(sql_models.Project.owner),
@@ -28,7 +28,7 @@ def get_projects(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
         )
     return query.all()
 
-@router.post("/projects", tags=["Projects"])
+@router.post("/projects", tags=["Projects"], response_model=project_schemas.ProjectRead)
 def create_project(project: project_schemas.ProjectCreate, db: Session = Depends(get_db)):
     # Check if code exists
     existing = db.query(sql_models.Project).filter(sql_models.Project.code == project.code).first()
@@ -52,7 +52,7 @@ def create_project(project: project_schemas.ProjectCreate, db: Session = Depends
     db.refresh(new_project)
     return new_project
 
-@router.get("/projects/{project_id}", tags=["Projects"])
+@router.get("/projects/{project_id}", tags=["Projects"], response_model=project_schemas.ProjectRead)
 def get_project_details(project_id: int, db: Session = Depends(get_db)):
     project = db.query(sql_models.Project).options(
         joinedload(sql_models.Project.owner)
@@ -84,7 +84,7 @@ def create_wbs_phase(project_id: int, wbs: project_schemas.WBSCreate, db: Sessio
     db.refresh(new_wbs)
     return new_wbs
 
-@router.post("/projects/{project_id}/tasks", tags=["WBS"])
+@router.post("/projects/{project_id}/tasks", tags=["WBS"], response_model=project_schemas.TaskRead)
 def create_task(project_id: int, task: project_schemas.TaskCreate, db: Session = Depends(get_db)):
     # Verify WBS belongs to project
     wbs = db.query(sql_models.WBS).filter(sql_models.WBS.id == task.wbs_id, sql_models.WBS.project_id == project_id).first()
@@ -145,7 +145,7 @@ def update_wbs_phase(
     db.refresh(wbs)
     return wbs
 
-@router.put("/tasks/{task_id}", tags=["WBS"])
+@router.put("/tasks/{task_id}", tags=["WBS"], response_model=project_schemas.TaskRead)
 def update_task_details(
     task_id: int, 
     task_update: project_schemas.TaskUpdate, 
@@ -226,7 +226,7 @@ def delete_project(project_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Project deleted successfully"}
 
-@router.put("/projects/{project_id}", tags=["Projects"])
+@router.put("/projects/{project_id}", tags=["Projects"], response_model=project_schemas.ProjectRead)
 def update_project(
     project_id: int, 
     project_update: project_schemas.ProjectUpdate, 
@@ -245,7 +245,7 @@ def update_project(
     db.refresh(db_project)
     return db_project
 
-@router.get("/tasks/assigned", tags=["Tasks"])
+@router.get("/tasks/assigned", tags=["Tasks"], response_model=List[project_schemas.TaskRead])
 def get_assigned_tasks(assignee_id: Optional[int] = None, db: Session = Depends(get_db)):
     """Fetch tasks. If assignee_id provided, filter by it. Otherwise return all (for admin/monitoring)."""
     query = db.query(sql_models.Task)
