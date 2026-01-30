@@ -255,39 +255,12 @@ export default function FinanceDashboard() {
     const totalCapexSpent = projects.reduce((sum, p) => sum + (p.actual_capex || 0), 0);
 
     // Filter Ledger for OPEX
-    const allLedgerItems = deptStats?.requests && deptStats?.expenses ? [
+    const allLedgerItems = (deptStats?.requests || deptStats?.expenses) ? [
         ...(deptStats.requests || []).filter(r => r.status === 'approved').map(r => ({ ...r, type: 'credit', date: r.created_at || new Date().toISOString() })),
         ...(deptStats.expenses || []).map(e => ({ ...e, type: 'debit', date: e.date || new Date().toISOString() }))
     ].sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
 
-    const filteredLedger = opexCategoryFilter === 'All'
-        ? allLedgerItems
-        : allLedgerItems.filter(item => item.category === opexCategoryFilter);
-
-    // Calculate Running Balance for Categories
-    let runningBalance = 0;
-    const ledgerWithBalance = filteredLedger.map(item => {
-        const amount = parseFloat(item.amount) || 0;
-        if (item.type === 'credit') runningBalance += amount;
-        else runningBalance -= amount;
-        return { ...item, amount, runningBalance };
-    });
-
-    // Unique Categories
-    const budgetCategories = (deptStats.category_budgets || []).map(b => b.category || "Uncategorized");
-    const filteredExpenses = (deptStats.expenses || []).filter(e =>
-        selectedCategory === 'All' || (e.category || "Uncategorized") === selectedCategory
-    );
-    const expenseCategories = filteredExpenses.map(e => e.category || "Uncategorized");
-    const requestCategories = (deptStats.requests || []).filter(r => r.status === 'approved').map(r => r.category || "Uncategorized");
-
-    const uniqueCategories = ['All', ...new Set([
-        ...flatCategories,
-        ...budgetCategories,
-        ...expenseCategories,
-        ...requestCategories
-    ])];
-
+    // Derive Flat Categories from settings
     const flatCategories = Array.isArray(categories) ? categories.reduce((acc, cat) => {
         if (!cat || !cat.name) return acc;
         acc.push(cat.name);
@@ -298,6 +271,32 @@ export default function FinanceDashboard() {
         }
         return acc;
     }, []) : [];
+
+    // Derive All Unique Categories (settings + actual data usage)
+    const budgetCategories = (deptStats?.category_budgets || []).map(b => b.category || "Uncategorized");
+    const expenseCategories = (deptStats?.expenses || []).map(e => e.category || "Uncategorized");
+    const requestCategories = (deptStats?.requests || []).filter(r => r.status === 'approved').map(r => r.category || "Uncategorized");
+
+    const uniqueCategories = ['All', ...new Set([
+        ...flatCategories,
+        ...budgetCategories,
+        ...expenseCategories,
+        ...requestCategories
+    ])];
+
+    // Filter Ledger by Category
+    const filteredLedger = opexCategoryFilter === 'All'
+        ? allLedgerItems
+        : allLedgerItems.filter(item => (item.category || "Uncategorized") === opexCategoryFilter);
+
+    // Calculate Running Balance
+    let runningBalance = 0;
+    const ledgerWithBalance = filteredLedger.map(item => {
+        const amount = parseFloat(item.amount) || 0;
+        if (item.type === 'credit') runningBalance += amount;
+        else runningBalance -= amount;
+        return { ...item, amount, runningBalance };
+    });
 
     return (
         <div className="space-y-6">
