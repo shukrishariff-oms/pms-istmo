@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment } from '../services/projects';
+import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask } from '../services/projects';
 import {
     Calendar,
     CheckCircle2,
@@ -264,6 +264,28 @@ export default function ProjectWorkspace() {
             setPayments(pay);
         } catch (err) {
             alert("Failed to delete: " + err.message);
+        }
+    }
+
+    async function handleDeleteWBS(wbsId) {
+        if (!confirm("Are you sure you want to delete this phase? This will also delete all tasks inside it.")) return;
+        try {
+            await deleteProjectWBS(wbsId);
+            const w = await getProjectWBS(selectedProjectId);
+            setWbs(w);
+        } catch (err) {
+            alert("Failed to delete phase: " + err.message);
+        }
+    }
+
+    async function handleDeleteTask(taskId) {
+        if (!confirm("Are you sure you want to delete this task?")) return;
+        try {
+            await deleteProjectTask(taskId);
+            const w = await getProjectWBS(selectedProjectId);
+            setWbs(w);
+        } catch (err) {
+            alert("Failed to delete task: " + err.message);
         }
     }
 
@@ -580,11 +602,20 @@ export default function ProjectWorkspace() {
                                 <tbody className="divide-y divide-slate-100">
                                     {wbs.map((phase, pIdx) => (
                                         <>
-                                            <tr key={`phase-${phase.id}`} className="bg-slate-50/50">
+                                            <tr key={`phase-${phase.id}`} className="group bg-slate-50/50">
                                                 <td className="px-6 py-3 text-xs font-bold text-slate-400 text-center">{pIdx + 1}</td>
-                                                <td colSpan={5} className="px-6 py-3 font-bold text-slate-800 flex items-center gap-2">
+                                                <td colSpan={4} className="px-6 py-3 font-bold text-slate-800 flex items-center gap-2">
                                                     <Layers size={16} className="text-slate-500" />
                                                     {phase.name}
+                                                </td>
+                                                <td className="px-6 py-3 text-right">
+                                                    <button
+                                                        onClick={() => handleDeleteWBS(phase.id)}
+                                                        className="p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                                                        title="Delete Phase"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
                                                 </td>
                                             </tr>
                                             {(phase.tasks || []).map((task, tIdx) => {
@@ -592,7 +623,7 @@ export default function ProjectWorkspace() {
                                                 const end = new Date(task.due_date);
                                                 const duration = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
                                                 return (
-                                                    <tr key={task.id} className="hover:bg-slate-50/80 transition-colors">
+                                                    <tr key={task.id} className="group hover:bg-slate-50/80 transition-colors">
                                                         <td className="px-6 py-4 text-xs text-slate-400 text-center">{pIdx + 1}.{tIdx + 1}</td>
                                                         <td className="px-6 py-4 pl-12 text-sm text-slate-700 font-medium relative">
                                                             <div className="absolute left-8 top-1/2 -mt-px w-3 h-px bg-slate-300"></div>
@@ -601,14 +632,21 @@ export default function ProjectWorkspace() {
                                                         <td className="px-6 py-4 text-sm text-slate-500">
                                                             {task.assignee ? task.assignee.full_name : 'Unassigned'}
                                                         </td>
-                                                        <td className="px-6 py-4 text-xs text-slate-500">
-                                                            {duration} days
+                                                        <td className="px-6 py-4 text-xs text-slate-500 font-mono">
+                                                            {duration}d
                                                         </td>
                                                         <td className="px-6 py-4 text-xs text-slate-500">
                                                             {task.planned_start ? new Date(task.planned_start).toLocaleDateString() : '-'} - {new Date(task.due_date).toLocaleDateString()}
                                                         </td>
-                                                        <td className="px-6 py-4 text-center">
+                                                        <td className="px-6 py-4 text-center relative">
                                                             <StatusBadge status={task.status} />
+                                                            <button
+                                                                onClick={() => handleDeleteTask(task.id)}
+                                                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                                                                title="Delete Task"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
                                                         </td>
                                                     </tr>
                                                 );

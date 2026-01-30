@@ -113,3 +113,21 @@ export const updateProject = async (id, data) => {
     if (!response.ok) throw new Error("Failed to update project");
     return response.json();
 };
+
+export const deleteProjectWBS = async (wbsId) => {
+    const response = await fetch(`${API_URL}/wbs/${wbsId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    });
+    if (!response.ok) throw new Error("Failed to delete phase");
+    return response.json();
+};
+
+export const deleteProjectTask = async (taskId) => {
+    const response = await fetch(`${API_URL}/tasks/${taskId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    });
+    if (!response.ok) throw new Error("Failed to delete task");
+    return response.json();
+};

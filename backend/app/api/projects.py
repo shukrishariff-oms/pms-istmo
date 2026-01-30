@@ -106,6 +106,26 @@ def create_task(project_id: int, task: project_schemas.TaskCreate, db: Session =
     db.refresh(new_task)
     return new_task
 
+@router.delete("/wbs/{wbs_id}", tags=["WBS"])
+def delete_wbs_phase(wbs_id: int, db: Session = Depends(get_db)):
+    wbs = db.query(sql_models.WBS).filter(sql_models.WBS.id == wbs_id).first()
+    if not wbs:
+        raise HTTPException(status_code=404, detail="Phase not found")
+    
+    db.delete(wbs)
+    db.commit()
+    return {"message": "Phase deleted successfully"}
+
+@router.delete("/tasks/{task_id}", tags=["WBS"])
+def delete_task(task_id: int, db: Session = Depends(get_db)):
+    task = db.query(sql_models.Task).filter(sql_models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    db.delete(task)
+    db.commit()
+    return {"message": "Task deleted successfully"}
+
 # --- Finance ---
 
 @router.get("/projects/{project_id}/payments", tags=["Finance"])
