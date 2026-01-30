@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProjects, createProject, deleteProject, updateProject } from '../services/projects';
 import { getCategories, createCategory, deleteCategory } from '../services/categories';
-import { Users, Plus, ShieldCheck, Calendar, Wallet, Trash2, Pencil, Settings, FolderTree } from 'lucide-react';
+import { Users, Plus, ShieldCheck, Calendar, Wallet, Trash2, Pencil, Settings, FolderTree, X } from 'lucide-react';
 import clsx from 'clsx';
 
 const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
