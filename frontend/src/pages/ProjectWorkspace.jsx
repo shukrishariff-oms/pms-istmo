@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask, updateProjectWBS, updateProjectTask } from '../services/projects';
 import { getUsers } from '../services/users';
@@ -17,7 +17,8 @@ import {
     Pencil,
     X,
     Briefcase,
-    Trash2
+    Trash2,
+    GitBranch
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -83,6 +84,7 @@ export default function ProjectWorkspace() {
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
     const [newTaskData, setNewTaskData] = useState({
         wbs_id: '',
+        parent_id: null,
         name: '',
         start_date: '',
         end_date: ''
@@ -110,6 +112,7 @@ export default function ProjectWorkspace() {
     const [selectedTaskItem, setSelectedTaskItem] = useState(null);
     const [taskFormData, setTaskFormData] = useState({
         name: '',
+        parent_id: null,
         assignee_id: '',
         status: '',
         planned_start: '',
@@ -327,12 +330,25 @@ export default function ProjectWorkspace() {
         setSelectedTaskItem(task);
         setTaskFormData({
             name: task.name,
+            parent_id: task.parent_id,
             assignee_id: task.assignee_id || '',
             status: task.status,
             planned_start: task.planned_start ? task.planned_start.split('T')[0] : '',
             due_date: task.due_date ? task.due_date.split('T')[0] : ''
         });
         setIsEditTaskModalOpen(true);
+    }
+
+    function handleAddSubTask(parentTask) {
+        const today = new Date().toISOString().split('T')[0];
+        setNewTaskData({
+            wbs_id: parentTask.wbs_id,
+            parent_id: parentTask.id,
+            name: '',
+            start_date: today,
+            end_date: today
+        });
+        setIsTaskModalOpen(true);
     }
 
     async function handleSaveTask() {
@@ -601,6 +617,7 @@ export default function ProjectWorkspace() {
 
                                                 await createProjectTask(selectedProjectId, {
                                                     wbs_id: parseInt(newTaskData.wbs_id),
+                                                    parent_id: newTaskData.parent_id,
                                                     name: newTaskData.name,
                                                     status: "not_started",
                                                     planned_start: new Date(newTaskData.start_date).toISOString(),
@@ -640,6 +657,7 @@ export default function ProjectWorkspace() {
                                         const today = new Date().toISOString().split('T')[0];
                                         setNewTaskData({
                                             wbs_id: wbs[0].id,
+                                            parent_id: null,
                                             name: '',
                                             start_date: today,
                                             end_date: today
@@ -694,50 +712,72 @@ export default function ProjectWorkspace() {
                                                     </div>
                                                 </td>
                                             </tr>
-                                            {(phase.tasks || []).map((task, tIdx) => {
-                                                const start = new Date(task.planned_start || task.created_at || Date.now());
-                                                const end = new Date(task.due_date);
-                                                const duration = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-                                                return (
-                                                    <tr key={task.id} className="group hover:bg-slate-50/80 transition-colors">
-                                                        <td className="px-6 py-4 text-xs text-slate-400 text-center">{pIdx + 1}.{tIdx + 1}</td>
-                                                        <td className="px-6 py-4 pl-12 text-sm text-slate-700 font-medium relative">
-                                                            <div className="absolute left-8 top-1/2 -mt-px w-3 h-px bg-slate-300"></div>
-                                                            {task.name}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-sm text-slate-500">
-                                                            {task.assignee ? task.assignee.full_name : 'Unassigned'}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-xs text-slate-500 font-mono">
-                                                            {duration}d
-                                                        </td>
-                                                        <td className="px-6 py-4 text-xs text-slate-500">
-                                                            {task.planned_start ? new Date(task.planned_start).toLocaleDateString() : '-'} - {new Date(task.due_date).toLocaleDateString()}
-                                                        </td>
-                                                        <td className="px-6 py-4 text-center relative">
-                                                            <div className="flex items-center justify-center gap-2">
-                                                                <StatusBadge status={task.status} />
-                                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                                                                    <button
-                                                                        onClick={() => openEditTaskModal(task)}
-                                                                        className="p-1 text-slate-300 hover:text-blue-500 transition-colors"
-                                                                        title="Edit Task"
-                                                                    >
-                                                                        <Pencil size={14} />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleDeleteTask(task.id)}
-                                                                        className="p-1 text-slate-300 hover:text-red-500 transition-colors"
-                                                                        title="Delete Task"
-                                                                    >
-                                                                        <Trash2 size={14} />
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
+                                            {(() => {
+                                                const renderRecursive = (items, parentId = null, depth = 0, prefix = '') => {
+                                                    return items
+                                                        .filter(t => t.parent_id === parentId)
+                                                        .map((task, tIdx) => {
+                                                            const currentPrefix = prefix ? `${prefix}.${tIdx + 1}` : `${pIdx + 1}.${tIdx + 1}`;
+                                                            const start = new Date(task.planned_start || task.created_at || Date.now());
+                                                            const end = new Date(task.due_date);
+                                                            const duration = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+
+                                                            return (
+                                                                <React.Fragment key={task.id}>
+                                                                    <tr className="group hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
+                                                                        <td className="px-6 py-4 text-xs text-slate-400 text-center font-mono">{currentPrefix}</td>
+                                                                        <td className="px-6 py-4 text-sm text-slate-700 relative" style={{ paddingLeft: `${depth * 24 + 48}px` }}>
+                                                                            <div className="absolute left-6 top-0 bottom-0 w-px bg-slate-100"></div>
+                                                                            <div className="absolute left-6 top-1/2 w-4 h-px bg-slate-200"></div>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className="font-medium">{task.name}</span>
+                                                                                <button
+                                                                                    onClick={() => handleAddSubTask(task)}
+                                                                                    className="p-1 text-slate-300 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all"
+                                                                                    title="Add Sub-task"
+                                                                                >
+                                                                                    <GitBranch size={12} />
+                                                                                </button>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="px-6 py-4 text-sm text-slate-500">
+                                                                            {task.assignee ? task.assignee.full_name : 'Unassigned'}
+                                                                        </td>
+                                                                        <td className="px-6 py-4 text-xs text-slate-500 font-mono">
+                                                                            {duration}d
+                                                                        </td>
+                                                                        <td className="px-6 py-4 text-xs text-slate-500">
+                                                                            {task.planned_start ? new Date(task.planned_start).toLocaleDateString() : '-'} - {new Date(task.due_date).toLocaleDateString()}
+                                                                        </td>
+                                                                        <td className="px-6 py-4 text-center relative">
+                                                                            <div className="flex items-center justify-center gap-2">
+                                                                                <StatusBadge status={task.status} />
+                                                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                                                    <button
+                                                                                        onClick={() => openEditTaskModal(task)}
+                                                                                        className="p-1 text-slate-300 hover:text-blue-500 transition-colors"
+                                                                                        title="Edit Task"
+                                                                                    >
+                                                                                        <Pencil size={14} />
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => handleDeleteTask(task.id)}
+                                                                                        className="p-1 text-slate-300 hover:text-red-500 transition-colors"
+                                                                                        title="Delete Task"
+                                                                                    >
+                                                                                        <Trash2 size={14} />
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                    {renderRecursive(items, task.id, depth + 1, currentPrefix)}
+                                                                </React.Fragment>
+                                                            );
+                                                        });
+                                                };
+                                                return renderRecursive(phase.tasks || []);
+                                            })()}
                                         </>
                                     ))}
                                 </tbody>
@@ -785,61 +825,72 @@ export default function ProjectWorkspace() {
                                     </div>
 
                                     {/* Task Rows */}
-                                    {phase.tasks.map((task, tIdx) => {
-                                        const start = new Date(task.planned_start || task.created_at || Date.now());
-                                        const end = new Date(task.due_date);
-                                        const duration = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-                                        const projStart = new Date(project.start_date);
-                                        const offsetDays = Math.max(0, Math.floor((start - projStart) / (1000 * 60 * 60 * 24)));
-                                        const width = duration * 10;
-                                        const left = offsetDays * 10;
+                                    {(() => {
+                                        const renderTimelineRecursive = (items, parentId = null, depth = 0, prefix = '') => {
+                                            return items
+                                                .filter(t => t.parent_id === parentId)
+                                                .map((task, tIdx) => {
+                                                    const currentPrefix = prefix ? `${prefix}.${tIdx + 1}` : `${pIdx + 1}.${tIdx + 1}`;
+                                                    const start = new Date(task.planned_start || task.created_at || Date.now());
+                                                    const end = new Date(task.due_date);
+                                                    const duration = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+                                                    const projStart = new Date(project.start_date);
+                                                    const offsetDays = Math.max(0, Math.floor((start - projStart) / (1000 * 60 * 60 * 24)));
+                                                    const width = duration * 10;
+                                                    const left = offsetDays * 10;
 
-                                        return (
-                                            <div key={task.id} className="flex text-xs border-b border-slate-100 hover:bg-blue-50 group">
-                                                <div className="w-12 p-1 px-2 border-r border-slate-200 text-right text-slate-400">{pIdx + 1}.{tIdx + 1}</div>
-                                                <div className="w-6 p-1 border-r border-slate-200 text-center">
-                                                    <div className={clsx("w-3 h-3 mx-auto mt-0.5 rounded-sm",
-                                                        task.status === 'completed' ? "bg-blue-500" :
-                                                            task.status === 'in_progress' ? "bg-green-500" : "bg-slate-300"
-                                                    )}></div>
-                                                </div>
-                                                <div className="w-64 p-1 px-2 border-r border-slate-200 truncate pl-6 relative">
-                                                    <div className="absolute left-2 top-0 bottom-0 w-px bg-slate-200"></div>
-                                                    <div className="absolute left-2 top-1/2 w-3 h-px bg-slate-200"></div>
-                                                    {task.name}
-                                                </div>
-                                                <div className="w-24 p-1 border-r border-slate-200 text-slate-600">
-                                                    {start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                                </div>
-                                                <div className="w-24 p-1 border-r border-slate-200 text-slate-600">
-                                                    {end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                                </div>
+                                                    return (
+                                                        <React.Fragment key={task.id}>
+                                                            <div className="flex text-xs border-b border-slate-100 hover:bg-blue-50 group">
+                                                                <div className="w-12 p-1 px-2 border-r border-slate-200 text-right text-slate-400">{currentPrefix}</div>
+                                                                <div className="w-6 p-1 border-r border-slate-200 text-center">
+                                                                    <div className={clsx("w-3 h-3 mx-auto mt-0.5 rounded-sm",
+                                                                        task.status === 'completed' ? "bg-blue-500" :
+                                                                            task.status === 'in_progress' ? "bg-green-500" : "bg-slate-300"
+                                                                    )}></div>
+                                                                </div>
+                                                                <div className="w-64 p-1 truncate relative" style={{ paddingLeft: `${depth * 12 + 24}px`, borderRight: '1px solid #e2e8f0' }}>
+                                                                    <div className="absolute left-2 top-0 bottom-0 w-px bg-slate-200"></div>
+                                                                    <div className="absolute left-2 top-1/2 w-3 h-px bg-slate-200"></div>
+                                                                    {task.name}
+                                                                </div>
+                                                                <div className="w-24 p-1 border-r border-slate-200 text-slate-600">
+                                                                    {start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                                </div>
+                                                                <div className="w-24 p-1 border-r border-slate-200 text-slate-600">
+                                                                    {end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                                </div>
 
-                                                {/* Gantt Bar Visualization */}
-                                                <div className="flex-1 relative border-l border-slate-100 bg-white">
-                                                    <div className="absolute inset-0 flex">
-                                                        {[...Array(20)].map((_, i) => (
-                                                            <div key={i} className="flex-1 border-r border-slate-50"></div>
-                                                        ))}
-                                                    </div>
-                                                    <div className={clsx(
-                                                        "absolute top-1.5 h-3 rounded-sm shadow-sm opacity-80 min-w-[4px]",
-                                                        task.status === 'completed' ? 'bg-blue-500' :
-                                                            task.status === 'in_progress' ? 'bg-green-500' : 'bg-slate-400'
-                                                    )}
-                                                        style={{
-                                                            left: `${Math.min(left, 400)}px`,
-                                                            width: `${width}px`
-                                                        }}></div>
-                                                    <div className="absolute top-1 text-[10px] text-slate-400 whitespace-nowrap"
-                                                        style={{ left: `${Math.min(left, 400) + width + 5}px` }}
-                                                    >
-                                                        {task.assignee?.full_name?.split(' ')[0]}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                                                {/* Gantt Bar Visualization */}
+                                                                <div className="flex-1 relative border-l border-slate-100 bg-white">
+                                                                    <div className="absolute inset-0 flex">
+                                                                        {[...Array(20)].map((_, i) => (
+                                                                            <div key={i} className="flex-1 border-r border-slate-50"></div>
+                                                                        ))}
+                                                                    </div>
+                                                                    <div className={clsx(
+                                                                        "absolute top-1.5 h-3 rounded-sm shadow-sm opacity-80 min-w-[4px]",
+                                                                        task.status === 'completed' ? 'bg-blue-500' :
+                                                                            task.status === 'in_progress' ? 'bg-green-500' : 'bg-slate-400'
+                                                                    )}
+                                                                        style={{
+                                                                            left: `${Math.min(left, 400)}px`,
+                                                                            width: `${width}px`
+                                                                        }}></div>
+                                                                    <div className="absolute top-1 text-[10px] text-slate-400 whitespace-nowrap"
+                                                                        style={{ left: `${Math.min(left, 400) + width + 5}px` }}
+                                                                    >
+                                                                        {task.assignee?.full_name?.split(' ')[0]}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            {renderTimelineRecursive(items, task.id, depth + 1, currentPrefix)}
+                                                        </React.Fragment>
+                                                    );
+                                                });
+                                        };
+                                        return renderTimelineRecursive(phase.tasks || []);
+                                    })()}
                                 </div>
                             ))}
                         </div>

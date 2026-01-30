@@ -174,6 +174,7 @@ class Task(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     wbs_id = Column(Integer, ForeignKey("wbs.id"))
+    parent_id = Column(Integer, ForeignKey("tasks.id"), nullable=True)
     name = Column(String)
     description = Column(Text, nullable=True)
     
@@ -190,6 +191,9 @@ class Task(Base):
     
     wbs_item = relationship("WBS", back_populates="tasks")
     assignee = relationship("User", back_populates="tasks_assigned")
+    
+    parent = relationship("Task", remote_side=[id], back_populates="sub_tasks")
+    sub_tasks = relationship("Task", back_populates="parent", cascade="all, delete-orphan")
 
 class Payment(Base):
     __tablename__ = "payments"

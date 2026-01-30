@@ -53,6 +53,7 @@ class WBSUpdate(BaseModel):
 
 class TaskCreate(BaseModel):
     wbs_id: int
+    parent_id: Optional[int] = None
     name: str
     description: Optional[str] = None
     assignee_id: Optional[int] = None
@@ -63,6 +64,7 @@ class TaskCreate(BaseModel):
 
 class TaskUpdate(BaseModel):
     name: Optional[str] = None
+    parent_id: Optional[int] = None
     description: Optional[str] = None
     assignee_id: Optional[int] = None
     status: Optional[TaskStatus] = None
