@@ -14,7 +14,8 @@ import {
     TrendingUp,
     Plus,
     Pencil,
-    X
+    X,
+    Briefcase
 } from 'lucide-react';
 import clsx from 'clsx';
 
