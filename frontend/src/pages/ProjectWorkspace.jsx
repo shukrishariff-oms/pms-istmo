@@ -397,7 +397,7 @@ export default function ProjectWorkspace() {
             {/* Tabs */}
             <div className="border-b border-slate-200">
                 <nav className="-mb-px flex space-x-8">
-                    {['overview', 'wbs', 'timeline', 'finance', 'files'].map(tab => (
+                    {['overview', 'wbs', 'timeline', 'payments', 'files'].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -759,8 +759,8 @@ export default function ProjectWorkspace() {
                     </div>
                 )}
 
-                {/* FINANCE TAB */}
-                {activeTab === 'finance' && (
+                {/* PAYMENTS TAB */}
+                {activeTab === 'payments' && (
                     <div className="p-0">
                         <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-200 bg-slate-50/30">
                             <div className="p-6 text-center">
