@@ -189,8 +189,6 @@ export default function ProjectWorkspace() {
             owner_id: project.owner_id,
             assist_coordinator_id: project.assist_coordinator_id || '',
             budget_capex: project.budget_capex,
-            start_date: project.start_date.split('T')[0],
-            end_date: project.end_date.split('T')[0],
             status: project.status
         });
         setIsEditModalOpen(true);
@@ -202,9 +200,7 @@ export default function ProjectWorkspace() {
                 ...editFormData,
                 owner_id: parseInt(editFormData.owner_id),
                 assist_coordinator_id: editFormData.assist_coordinator_id ? parseInt(editFormData.assist_coordinator_id) : null,
-                budget_capex: parseFloat(editFormData.budget_capex),
-                start_date: new Date(editFormData.start_date).toISOString(),
-                end_date: new Date(editFormData.end_date).toISOString()
+                budget_capex: parseFloat(editFormData.budget_capex)
             };
 
             await updateProject(project.id, payload);
@@ -409,6 +405,15 @@ export default function ProjectWorkspace() {
         </div>
     );
 
+    // Derived dates based on WBS content
+    const allTasks = wbs.flatMap(p => p.tasks || []);
+    const derivedStartDate = allTasks.length > 0
+        ? new Date(Math.min(...allTasks.map(t => new Date(t.planned_start || t.created_at).getTime())))
+        : project?.start_date;
+    const derivedEndDate = allTasks.length > 0
+        ? new Date(Math.max(...allTasks.map(t => new Date(t.due_date).getTime())))
+        : project?.end_date;
+
     return (
         <div className="space-y-6">
             {/* List Selector (Mock Sidebar for Project Switching) */}
@@ -460,13 +465,13 @@ export default function ProjectWorkspace() {
                     <div>
                         <p className="text-xs text-slate-400 font-medium">Start Date</p>
                         <p className="text-sm font-bold text-slate-900">
-                            {formatDate(project.start_date)}
+                            {formatDate(derivedStartDate)}
                         </p>
                     </div>
                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
                         <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">End Date</p>
                         <p className="text-sm font-bold text-slate-900">
-                            {formatDate(project.end_date)}
+                            {formatDate(derivedEndDate)}
                         </p>
                     </div>
                     <div>
@@ -815,7 +820,7 @@ export default function ProjectWorkspace() {
                             <div className="flex items-center gap-2 text-xs text-slate-600">
                                 <span className="font-bold">GANTT VISUALIZATION</span>
                                 <span className="h-4 w-px bg-slate-300 mx-1"></span>
-                                <span>Project Baseline: {formatDate(project.start_date)}</span>
+                                <span>Project Baseline: {formatDate(derivedStartDate)}</span>
                             </div>
                         </div>
                         {/* MS Project Header */}
@@ -857,7 +862,7 @@ export default function ProjectWorkspace() {
                                                     const start = new Date(task.planned_start || task.created_at || Date.now());
                                                     const end = new Date(task.due_date);
                                                     const duration = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-                                                    const projStart = new Date(project.start_date);
+                                                    const projStart = new Date(derivedStartDate);
                                                     const offsetDays = Math.max(0, Math.floor((start - projStart) / (1000 * 60 * 60 * 24)));
                                                     const width = duration * 10;
                                                     const left = offsetDays * 10;
@@ -1105,26 +1110,6 @@ export default function ProjectWorkspace() {
                                         <option key={u.id} value={u.id}>{u.full_name}</option>
                                     ))}
                                 </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">Start Date</label>
-                                <input
-                                    type="date"
-                                    className="w-full border p-2 rounded-lg border-slate-200 outline-none"
-                                    value={editFormData.start_date}
-                                    onChange={e => setEditFormData({ ...editFormData, start_date: e.target.value })}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">End Date</label>
-                                <input
-                                    type="date"
-                                    className="w-full border p-2 rounded-lg border-slate-200 outline-none"
-                                    value={editFormData.end_date}
-                                    onChange={e => setEditFormData({ ...editFormData, end_date: e.target.value })}
-                                />
                             </div>
 
                             <div className="col-span-2">

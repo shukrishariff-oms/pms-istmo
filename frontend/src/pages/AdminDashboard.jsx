@@ -87,9 +87,7 @@ export default function AdminDashboard() {
             description: '',
             owner_id: '',
             assist_coordinator_id: '',
-            budget_capex: 500000,
-            start_date: new Date().toISOString().split('T')[0],
-            end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]
+            budget_capex: 500000
         });
         setIsModalOpen(true);
     }
@@ -102,9 +100,7 @@ export default function AdminDashboard() {
             description: p.description || '',
             owner_id: p.owner_id || '',
             assist_coordinator_id: p.assist_coordinator_id || '',
-            budget_capex: p.budget_capex,
-            start_date: p.start_date.split('T')[0],
-            end_date: p.end_date.split('T')[0]
+            budget_capex: p.budget_capex
         });
         setIsModalOpen(true);
     }
@@ -115,9 +111,7 @@ export default function AdminDashboard() {
                 ...formData,
                 owner_id: parseInt(formData.owner_id),
                 assist_coordinator_id: formData.assist_coordinator_id ? parseInt(formData.assist_coordinator_id) : null,
-                budget_capex: parseFloat(formData.budget_capex),
-                start_date: new Date(formData.start_date).toISOString(),
-                end_date: new Date(formData.end_date).toISOString()
+                budget_capex: parseFloat(formData.budget_capex)
             };
 
             if (editingProjectId) {
@@ -232,16 +226,6 @@ export default function AdminDashboard() {
                                         <option key={u.id} value={u.id}>{u.full_name}</option>
                                     ))}
                                 </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">Start Date</label>
-                                <input type="date" className="w-full border p-2 rounded-lg" value={formData.start_date} onChange={e => setFormData({ ...formData, start_date: e.target.value })} />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">End Date</label>
-                                <input type="date" className="w-full border p-2 rounded-lg" value={formData.end_date} onChange={e => setFormData({ ...formData, end_date: e.target.value })} />
                             </div>
 
                             <div>

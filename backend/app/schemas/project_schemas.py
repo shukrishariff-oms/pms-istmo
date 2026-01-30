@@ -80,8 +80,8 @@ class ProjectCreate(BaseModel):
     budget_capex: float = 0.0
     budget_opex_allocation: float = 0.0
     status: str = "on_track"
-    start_date: datetime
-    end_date: datetime
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
     owner_id: int
     assist_coordinator_id: Optional[int] = None
 
