@@ -12,7 +12,25 @@ router = APIRouter()
 
 # --- Projects ---
 
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
+
+def calculate_task_overdue(t, now):
+    """Utility to calculate if a task is overdue based on start or due dates."""
+    t_status = str(t.status).lower()
+    is_overdue = False
+    if t_status != "completed":
+        # Late Finish
+        if t.due_date:
+            t_due = t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)
+            if t_due < now:
+                is_overdue = True
+        
+        # Late Start
+        if not is_overdue and t_status == "not_started" and t.planned_start:
+            t_start = t.planned_start.replace(tzinfo=timezone.utc) if t.planned_start.tzinfo is None else t.planned_start.astimezone(timezone.utc)
+            if t_start < now:
+                is_overdue = True
+    return is_overdue
 
 @router.get("/projects", tags=["Projects"], response_model=List[project_schemas.ProjectRead])
 def get_projects(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
@@ -59,19 +77,7 @@ def get_projects(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
         any_task_overdue = False
         for wbs in p.wbs_items:
             for t in wbs.tasks:
-                t_status = str(t.status).lower()
-                t.is_overdue = False
-                if t_status != "completed":
-                    if t.due_date:
-                        t_due = t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)
-                        if t_due < now:
-                            t.is_overdue = True
-                    
-                    if not t.is_overdue and t_status == "not_started" and t.planned_start:
-                        t_start = t.planned_start.replace(tzinfo=timezone.utc) if t.planned_start.tzinfo is None else t.planned_start.astimezone(timezone.utc)
-                        if t_start < now:
-                            t.is_overdue = True
-                
+                t.is_overdue = calculate_task_overdue(t, now)
                 if t.is_overdue and not t.sub_tasks:
                     any_task_overdue = True
 
@@ -149,19 +155,7 @@ def get_project_details(project_id: int, db: Session = Depends(get_db)):
     any_task_overdue = False
     for wbs in project.wbs_items:
         for t in wbs.tasks:
-            t_status = str(t.status).lower()
-            t.is_overdue = False
-            if t_status != "completed":
-                if t.due_date:
-                    t_due = t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)
-                    if t_due < now:
-                        t.is_overdue = True
-                
-                if not t.is_overdue and t_status == "not_started" and t.planned_start:
-                    t_start = t.planned_start.replace(tzinfo=timezone.utc) if t.planned_start.tzinfo is None else t.planned_start.astimezone(timezone.utc)
-                    if t_start < now:
-                        t.is_overdue = True
-            
+            t.is_overdue = calculate_task_overdue(t, now)
             if t.is_overdue and not t.sub_tasks:
                 any_task_overdue = True
 
@@ -183,6 +177,13 @@ def get_project_wbs(project_id: int, db: Session = Depends(get_db)):
     wbs_items = db.query(sql_models.WBS).options(
         joinedload(sql_models.WBS.tasks).joinedload(sql_models.Task.assignee)
     ).filter(sql_models.WBS.project_id == project_id).all()
+    
+    # Calculate overdue flags for WBS view
+    now = datetime.now(timezone.utc)
+    for wbs in wbs_items:
+        for t in wbs.tasks:
+            t.is_overdue = calculate_task_overdue(t, now)
+            
     return wbs_items
 
 @router.post("/projects/{project_id}/wbs", tags=["WBS"])

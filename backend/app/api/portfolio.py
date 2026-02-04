@@ -4,6 +4,7 @@ from sqlalchemy import extract, and_, or_
 from datetime import datetime, timedelta, timezone
 from app.db.database import get_db
 from app.models import sql_models
+from app.api.projects import calculate_task_overdue
 
 router = APIRouter()
 
@@ -27,34 +28,21 @@ def get_portfolio_dashboard(db: Session = Depends(get_db)):
         next_year = current_year
         
     for p in projects:
-        # A. Fetch all tasks for this project to categorize in Python
-        # This is more robust than SQLite-specific extract calls
-        project_tasks = db.query(sql_models.Task).filter(
-            sql_models.Task.wbs_item.has(project_id=p.id)
-        ).all()
+        # A. Fetch all tasks for this project, ORDERED by WBS and then Task ID
+        # This ensures the HOD sees a sequence that matches the WBS structure
+        project_tasks = db.query(sql_models.Task).join(sql_models.WBS).filter(
+            sql_models.WBS.project_id == p.id
+        ).order_by(sql_models.WBS.id.asc(), sql_models.Task.id.asc()).all()
 
         tasks_this_month_data = [] # Will include Current Month + Overdue
         tasks_next_month_data = [] # Forecast
 
         for t in project_tasks:
+            # 1. Handle Overdue (Using centralized logic)
+            is_overdue = calculate_task_overdue(t, now)
             t_status = str(t.status).lower()
-            
-            # 1. Handle Overdue (Completed tasks are never overdue)
-            is_overdue = False
-            if t_status != "completed":
-                # Check for Late Completion (Overdue)
-                if t.due_date:
-                    t_due = t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)
-                    if t_due < now:
-                        is_overdue = True
-                
-                # Check for Late Start (if still not started and passed start date)
-                if not is_overdue and t_status == "not_started" and t.planned_start:
-                    t_start = t.planned_start.replace(tzinfo=timezone.utc) if t.planned_start.tzinfo is None else t.planned_start.astimezone(timezone.utc)
-                    if t_start < now:
-                        is_overdue = True
 
-            # 2. Categorize
+            # 2. Categorize based on Start and End dates
             t_planned_end = t.planned_end.replace(tzinfo=timezone.utc) if t.planned_end and t.planned_end.tzinfo is None else (t.planned_end.astimezone(timezone.utc) if t.planned_end else None)
             t_planned_start = t.planned_start.replace(tzinfo=timezone.utc) if t.planned_start and t.planned_start.tzinfo is None else (t.planned_start.astimezone(timezone.utc) if t.planned_start else None)
 
@@ -67,7 +55,8 @@ def get_portfolio_dashboard(db: Session = Depends(get_db)):
                 in_current_month = True
             
             if is_overdue or in_current_month or t_status == "in_progress":
-                if len(tasks_this_month_data) < 8: # Limit to 8 items per project for UI cleanliness
+                # Increase visibility limit as requested ("semua keluar")
+                if len(tasks_this_month_data) < 20: 
                     tasks_this_month_data.append({
                         "id": t.id,
                         "name": t.name,
@@ -79,7 +68,7 @@ def get_portfolio_dashboard(db: Session = Depends(get_db)):
             # --- Next Month Forecast ---
             # Criteria: Planned to start next month
             if t_planned_start and t_planned_start.month == next_month and t_planned_start.year == next_year:
-                if len(tasks_next_month_data) < 5:
+                if len(tasks_next_month_data) < 10:
                     tasks_next_month_data.append({
                         "id": t.id,
                         "name": t.name,
