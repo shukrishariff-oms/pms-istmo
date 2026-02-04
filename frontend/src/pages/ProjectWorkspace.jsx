@@ -74,7 +74,7 @@ const TaskStatusSelector = ({ task, onStatusChange }) => {
 
     return (
         <select
-            value={task.status}
+            value={isOverdue ? "delayed" : task.status}
             onChange={(e) => onStatusChange(task.id, e.target.value)}
             className={clsx(
                 "px-2 py-0.5 rounded-full text-[10px] font-bold border outline-none cursor-pointer transition-all hover:border-slate-400",
@@ -82,6 +82,7 @@ const TaskStatusSelector = ({ task, onStatusChange }) => {
                 isOverdue && "animate-pulse shadow-sm shadow-red-100"
             )}
         >
+            {isOverdue && <option value="delayed">DELAYED</option>}
             <option value="not_started">NOT STARTED</option>
             <option value="in_progress">IN PROGRESS</option>
             <option value="blocked">BLOCKED</option>
