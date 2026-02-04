@@ -60,6 +60,34 @@ const StatusBadge = ({ status, isOverdue }) => {
     );
 };
 
+const TaskStatusSelector = ({ task, onStatusChange }) => {
+    const styles = {
+        not_started: "bg-slate-100 text-slate-600 border-slate-200",
+        in_progress: "bg-blue-50 text-blue-600 border-blue-200",
+        blocked: "bg-red-50 text-red-600 border-red-200",
+        completed: "bg-emerald-50 text-emerald-600 border-emerald-200"
+    };
+
+    const finalStatus = task.is_overdue && task.status !== 'completed' ? 'delayed' : task.status;
+
+    return (
+        <select
+            value={task.status}
+            onChange={(e) => onStatusChange(task.id, e.target.value)}
+            className={clsx(
+                "px-2 py-0.5 rounded-full text-[10px] font-bold border outline-none cursor-pointer transition-all hover:border-slate-400",
+                styles[task.status] || styles.not_started,
+                task.is_overdue && task.status !== 'completed' && "animate-pulse border-red-400 ring-1 ring-red-100"
+            )}
+        >
+            <option value="not_started">NOT STARTED</option>
+            <option value="in_progress">IN PROGRESS</option>
+            <option value="blocked">BLOCKED</option>
+            <option value="completed">COMPLETED</option>
+        </select>
+    );
+};
+
 const TAB_CLASSES = "px-4 py-2 text-sm font-medium border-b-2 transition-colors";
 const ACTIVE_TAB = "border-blue-600 text-blue-600";
 const INACTIVE_TAB = "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300";
@@ -413,6 +441,17 @@ export default function ProjectWorkspace() {
             alert("Failed to import: " + err.message);
         } finally {
             e.target.value = null; // Reset input
+        }
+    }
+
+    async function handleQuickStatusUpdate(taskId, newStatus) {
+        try {
+            // Minimal payload to just update status
+            await updateProjectTask(taskId, { status: newStatus });
+            // Soft refresh to update progress bars and table
+            await loadAllData();
+        } catch (err) {
+            alert("Failed to update status: " + err.message);
         }
     }
 
@@ -896,7 +935,10 @@ export default function ProjectWorkspace() {
                                                                         </td>
                                                                         <td className="px-6 py-4 text-center relative">
                                                                             <div className="flex items-center justify-center gap-2">
-                                                                                <StatusBadge status={task.status} isOverdue={task.is_overdue} />
+                                                                                <TaskStatusSelector
+                                                                                    task={task}
+                                                                                    onStatusChange={handleQuickStatusUpdate}
+                                                                                />
                                                                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                                                                                     <button
                                                                                         onClick={() => openEditTaskModal(task)}
