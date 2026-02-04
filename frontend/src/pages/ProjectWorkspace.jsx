@@ -485,7 +485,7 @@ export default function ProjectWorkspace() {
                         <p className="text-xs text-slate-500 mt-1">{Math.round(project.capex_utilization || 0)}% Used</p>
                     </div>
                     <div>
-                        <p className="text-xs text-slate-400 font-medium">Task Progress</p>
+                        <p className="text-xs text-slate-400 font-medium">Task Progress (DEBUG: DYNAMIC)</p>
                         <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
                             <div
                                 className="bg-emerald-500 h-full rounded-full transition-all duration-500"

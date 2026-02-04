@@ -38,12 +38,15 @@ def get_projects(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
         else:
             p.capex_utilization = 0.0
             
-        # 2. Calculate Task Progress
+        # 2. Calculate Task Progress (Only count leaf tasks - tasks with no sub-tasks)
         total_tasks = 0
         completed_tasks = 0
         for wbs in p.wbs_items:
-            total_tasks += len(wbs.tasks)
-            completed_tasks += len([t for t in wbs.tasks if str(t.status).lower() == "completed"])
+            for t in wbs.tasks:
+                if not t.sub_tasks:  # It's a leaf task
+                    total_tasks += 1
+                    if str(t.status).lower() == "completed":
+                        completed_tasks += 1
             
         if total_tasks > 0:
             p.task_progress = (completed_tasks / total_tasks) * 100
@@ -98,8 +101,11 @@ def get_project_details(project_id: int, db: Session = Depends(get_db)):
     total_tasks = 0
     completed_tasks = 0
     for wbs in project.wbs_items:
-        total_tasks += len(wbs.tasks)
-        completed_tasks += len([t for t in wbs.tasks if str(t.status).lower() == "completed"])
+        for t in wbs.tasks:
+            if not t.sub_tasks:  # Leaf task
+                total_tasks += 1
+                if str(t.status).lower() == "completed":
+                    completed_tasks += 1
         
     if total_tasks > 0:
         project.task_progress = (completed_tasks / total_tasks) * 100
