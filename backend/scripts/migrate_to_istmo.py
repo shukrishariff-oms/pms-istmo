@@ -5,26 +5,35 @@ def migrate():
     db = SessionLocal()
     print("Migrating departments to ISTMO branding...")
     
-    # 1. Update existing IT department
-    it_dept = db.query(sql_models.Department).filter(
-        (sql_models.Department.code == "IT") | (sql_models.Department.name == "Information Technology")
+    # 1. Try to find ISTMO Department
+    istmo_dept = db.query(sql_models.Department).filter(
+        (sql_models.Department.code == "ISTMO") | (sql_models.Department.name == "ISTMO Department")
     ).first()
     
-    if it_dept:
-        print(f"Updating Department ID {it_dept.id}: {it_dept.name} -> ISTMO Department")
-        it_dept.name = "ISTMO Department"
-        it_dept.code = "ISTMO"
-        db.commit()
-        db.refresh(it_dept)
-        target_dept_id = it_dept.id
-    else:
-        # Create it if it doesn't exist at all
-        print("Creating ISTMO Department...")
-        istmo_dept = sql_models.Department(name="ISTMO Department", code="ISTMO", budget_opex=500000.0)
-        db.add(istmo_dept)
-        db.commit()
-        db.refresh(istmo_dept)
+    if istmo_dept:
+        print(f"ISTMO Department already exists (ID: {istmo_dept.id}).")
         target_dept_id = istmo_dept.id
+    else:
+        # 2. Try to find IT Department and rename it
+        it_dept = db.query(sql_models.Department).filter(
+            (sql_models.Department.code == "IT") | (sql_models.Department.name == "Information Technology")
+        ).first()
+        
+        if it_dept:
+            print(f"Updating Department ID {it_dept.id}: {it_dept.name} -> ISTMO Department")
+            it_dept.name = "ISTMO Department"
+            it_dept.code = "ISTMO"
+            db.commit()
+            db.refresh(it_dept)
+            target_dept_id = it_dept.id
+        else:
+            # 3. Create ISTMO Department if none of the above exist
+            print("Creating ISTMO Department...")
+            new_dept = sql_models.Department(name="ISTMO Department", code="ISTMO", budget_opex=500000.0)
+            db.add(new_dept)
+            db.commit()
+            db.refresh(new_dept)
+            target_dept_id = new_dept.id
 
     # 2. Assign all unassigned users to ISTMO Department
     print("Assigning unassigned staff to ISTMO Department...")
