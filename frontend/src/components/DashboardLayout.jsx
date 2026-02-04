@@ -13,7 +13,8 @@ import {
     Bell,
     UserCircle,
     Users,
-    FileText
+    FileText,
+    Kanban
 } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -76,11 +77,11 @@ export default function DashboardLayout({ children }) {
             >
                 <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
                     <div className={cn("flex items-center gap-3", !isSidebarOpen && "lg:justify-center w-full")}>
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-500 flex items-center justify-center shrink-0">
-                            <span className="font-bold text-sm">DP</span>
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-900/20">
+                            <Kanban size={18} className="text-white" />
                         </div>
-                        <span className={cn("font-semibold text-lg tracking-tight", !isSidebarOpen && "lg:hidden")}>
-                            DPFT
+                        <span className={cn("font-bold text-lg tracking-tight", !isSidebarOpen && "lg:hidden")}>
+                            ISTMO
                         </span>
                     </div>
                     <button

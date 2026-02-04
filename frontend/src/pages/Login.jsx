@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/auth';
-import { LayoutDashboard, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Loader2, Kanban } from 'lucide-react';
 
 export default function Login() {
     const [username, setUsername] = useState('');
@@ -58,11 +58,11 @@ export default function Login() {
 
             <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 z-10 p-8">
                 <div className="flex flex-col items-center mb-8">
-                    <div className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg mb-4">
-                        <LayoutDashboard size={32} />
+                    <div className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-xl mb-4 border border-blue-400/20">
+                        <Kanban size={32} />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900">DPFT System</h1>
-                    <p className="text-slate-500 text-sm">Department Project & Finance Tracker</p>
+                    <h1 className="text-2xl font-bold text-slate-900">ISTMO Department</h1>
+                    <p className="text-slate-500 text-sm font-medium">Project Management System</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">

@@ -5,9 +5,9 @@ from fastapi.responses import FileResponse
 import os
 
 app = FastAPI(
-    title="Department Project & Finance Tracker (DPFT)",
-    description="Internal Enterprise Project Management System",
-    version="0.1.0"
+    title="ISTMO Department PMS",
+    description="Project Management & Finance Tracker for ISTMO Department",
+    version="1.0.0"
 )
 
 # CORS Configuration
