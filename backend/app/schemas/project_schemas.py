@@ -60,6 +60,10 @@ class ProjectRead(BaseModel):
     assist_coordinator_id: Optional[int] = None
     owner: Optional[UserResponse] = None
     assist_coordinator: Optional[UserResponse] = None
+    
+    # Calculated metrics
+    capex_utilization: float = 0.0
+    task_progress: float = 0.0
 
     class Config:
         from_attributes = True

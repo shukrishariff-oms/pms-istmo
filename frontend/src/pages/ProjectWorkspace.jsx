@@ -477,16 +477,22 @@ export default function ProjectWorkspace() {
                     <div>
                         <p className="text-xs text-slate-400 font-medium">CAPEX Utilization</p>
                         <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
-                            <div className="bg-blue-500 h-full rounded-full" style={{ width: '45%' }}></div>
+                            <div
+                                className="bg-blue-500 h-full rounded-full transition-all duration-500"
+                                style={{ width: `${Math.min(100, project.capex_utilization || 0)}%` }}
+                            ></div>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">45% Used</p>
+                        <p className="text-xs text-slate-500 mt-1">{Math.round(project.capex_utilization || 0)}% Used</p>
                     </div>
                     <div>
                         <p className="text-xs text-slate-400 font-medium">Task Progress</p>
                         <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
-                            <div className="bg-emerald-500 h-full rounded-full" style={{ width: '60%' }}></div>
+                            <div
+                                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                                style={{ width: `${Math.min(100, project.task_progress || 0)}%` }}
+                            ></div>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">60% Completed</p>
+                        <p className="text-xs text-slate-500 mt-1">{Math.round(project.task_progress || 0)}% Completed</p>
                     </div>
                 </div>
             </div>

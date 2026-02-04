@@ -17,7 +17,9 @@ from sqlalchemy import or_
 def get_projects(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
     query = db.query(sql_models.Project).options(
         joinedload(sql_models.Project.owner),
-        joinedload(sql_models.Project.assist_coordinator)
+        joinedload(sql_models.Project.assist_coordinator),
+        joinedload(sql_models.Project.payments),
+        joinedload(sql_models.Project.wbs_items).joinedload(sql_models.WBS.tasks)
     )
     if owner_id:
         query = query.filter(
@@ -26,7 +28,29 @@ def get_projects(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
                 sql_models.Project.assist_coordinator_id == owner_id
             )
         )
-    return query.all()
+    projects = query.all()
+    
+    for p in projects:
+        # 1. Calculate CAPEX Utilization
+        total_capex_paid = sum(pm.amount for pm in p.payments if str(pm.payment_type).lower() == "capex" and str(pm.status).lower() == "paid")
+        if p.budget_capex and p.budget_capex > 0:
+            p.capex_utilization = (total_capex_paid / p.budget_capex) * 100
+        else:
+            p.capex_utilization = 0.0
+            
+        # 2. Calculate Task Progress
+        total_tasks = 0
+        completed_tasks = 0
+        for wbs in p.wbs_items:
+            total_tasks += len(wbs.tasks)
+            completed_tasks += len([t for t in wbs.tasks if str(t.status).lower() == "completed"])
+            
+        if total_tasks > 0:
+            p.task_progress = (completed_tasks / total_tasks) * 100
+        else:
+            p.task_progress = 0.0
+            
+    return projects
 
 @router.post("/projects", tags=["Projects"], response_model=project_schemas.ProjectRead)
 def create_project(project: project_schemas.ProjectCreate, db: Session = Depends(get_db)):
@@ -55,11 +79,32 @@ def create_project(project: project_schemas.ProjectCreate, db: Session = Depends
 @router.get("/projects/{project_id}", tags=["Projects"], response_model=project_schemas.ProjectRead)
 def get_project_details(project_id: int, db: Session = Depends(get_db)):
     project = db.query(sql_models.Project).options(
-        joinedload(sql_models.Project.owner)
+        joinedload(sql_models.Project.owner),
+        joinedload(sql_models.Project.assist_coordinator),
+        joinedload(sql_models.Project.payments),
+        joinedload(sql_models.Project.wbs_items).joinedload(sql_models.WBS.tasks)
     ).filter(sql_models.Project.id == project_id).first()
     
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
+        
+    # Calculate Metrics
+    total_capex_paid = sum(pm.amount for pm in project.payments if str(pm.payment_type).lower() == "capex" and str(pm.status).lower() == "paid")
+    if project.budget_capex and project.budget_capex > 0:
+        project.capex_utilization = (total_capex_paid / project.budget_capex) * 100
+    else:
+        project.capex_utilization = 0.0
+        
+    total_tasks = 0
+    completed_tasks = 0
+    for wbs in project.wbs_items:
+        total_tasks += len(wbs.tasks)
+        completed_tasks += len([t for t in wbs.tasks if str(t.status).lower() == "completed"])
+        
+    if total_tasks > 0:
+        project.task_progress = (completed_tasks / total_tasks) * 100
+    else:
+        project.task_progress = 0.0
         
     return project
 
