@@ -14,7 +14,7 @@ def init_production():
     
     print("Seeding Essential Departments...")
     istmo_dept = sql_models.Department(
-        name="Information Technology (ISTMO)", 
+        name="ISTMO Department", 
         code="ISTMO", 
         budget_opex=0.0
     )

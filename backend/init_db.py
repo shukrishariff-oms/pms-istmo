@@ -99,11 +99,15 @@ def init_db():
     
     db = SessionLocal()
     
-    print("Seeding Departments...")
-    it_dept = sql_models.Department(name="Information Technology", code="IT", budget_opex=500000.0)
-    db.add(it_dept)
+    print("Seeding Essential Departments...")
+    istmo_dept = sql_models.Department(
+        name="ISTMO Department", 
+        code="ISTMO", 
+        budget_opex=0.0
+    )
+    db.add(istmo_dept)
     db.commit()
-    db.refresh(it_dept)
+    db.refresh(istmo_dept)
 
     print("Seeding Users...")
     # 1. Create Users
@@ -135,7 +139,7 @@ def init_db():
     print("Seeding Budget Requests...")
     # Initial Start Budget (Approved)
     start_budget = sql_models.BudgetRequest(
-        department_id=it_dept.id, requester_id=users[1].id, # HOD
+        department_id=istmo_dept.id, requester_id=users[1].id, # HOD
         title="Initial IT Budget Allocation", amount=500000.0, category="General", justification="Annual allocation",
         status=sql_models.RequestStatus.APPROVED, approved_by_id=users[0].id, approved_at=datetime.now()
     )
@@ -143,7 +147,7 @@ def init_db():
     
     # Pending Request
     req1 = sql_models.BudgetRequest(
-        department_id=it_dept.id, requester_id=users[3].id, # staff1
+        department_id=istmo_dept.id, requester_id=users[3].id, # staff1
         title="Q3 Server Maintenance", amount=15000.0, category="Maintenance", justification="Scheduled maintenance for rack 3-5",
         status=sql_models.RequestStatus.PENDING
     )
@@ -151,7 +155,7 @@ def init_db():
 
     # Kitchen Supply Request (Example from user)
     req2 = sql_models.BudgetRequest(
-        department_id=it_dept.id, requester_id=users[3].id,
+        department_id=istmo_dept.id, requester_id=users[3].id,
         title="Pantry Restock", amount=2000.0, category="Kitchen Supply", justification="Coffee, snacks for Q1",
         status=sql_models.RequestStatus.PENDING
     )
