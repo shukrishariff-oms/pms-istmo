@@ -66,25 +66,28 @@ const TaskStatusSelector = ({ task, onStatusChange }) => {
         in_progress: "bg-blue-50 text-blue-600 border-blue-200",
         blocked: "bg-red-50 text-red-600 border-red-200",
         completed: "bg-emerald-50 text-emerald-600 border-emerald-200",
-        delayed: "bg-red-100 text-red-700 border-red-200"
+        delayed: "bg-red-100 text-red-700 border-red-200 shadow-sm"
     };
 
     const isOverdue = task.is_overdue && task.status !== 'completed';
-    const finalStatus = isOverdue ? 'delayed' : task.status;
+    const finalStyle = isOverdue ? styles.delayed : (styles[task.status] || styles.not_started);
 
     return (
         <select
-            value={isOverdue ? "delayed" : task.status}
+            value={task.status}
             onChange={(e) => onStatusChange(task.id, e.target.value)}
             className={clsx(
                 "px-2 py-0.5 rounded-full text-[10px] font-bold border outline-none cursor-pointer transition-all hover:border-slate-400",
-                styles[finalStatus] || styles.not_started,
-                isOverdue && "animate-pulse shadow-sm shadow-red-100"
+                finalStyle,
+                isOverdue && "animate-pulse"
             )}
         >
-            {isOverdue && <option value="delayed">DELAYED</option>}
-            <option value="not_started">NOT STARTED</option>
-            <option value="in_progress">IN PROGRESS</option>
+            <option value="not_started">
+                {isOverdue && task.status === 'not_started' ? 'DELAYED' : 'NOT STARTED'}
+            </option>
+            <option value="in_progress">
+                {isOverdue && task.status === 'in_progress' ? 'LATE: IN PROGRESS' : 'IN PROGRESS'}
+            </option>
             <option value="blocked">BLOCKED</option>
             <option value="completed">COMPLETED</option>
         </select>
