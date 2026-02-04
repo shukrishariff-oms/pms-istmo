@@ -161,3 +161,31 @@ export const updateProjectTask = async (taskId, data) => {
     if (!response.ok) throw new Error("Failed to update task");
     return response.json();
 };
+
+export const downloadWBSTemplate = async () => {
+    const response = await fetch(`${API_URL}/tasks/template`, {
+        headers: {
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
+    });
+    if (!response.ok) throw new Error("Failed to download template");
+    return response.blob();
+};
+
+export const importWBSTasks = async (projectId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_URL}/projects/${projectId}/tasks/import`, {
+        method: 'POST',
+        headers: {
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.detail || "Failed to import tasks");
+    }
+    return response.json();
+};

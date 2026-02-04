@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import joinedload
 from typing import List, Optional
@@ -7,6 +8,8 @@ from app.models import sql_models
 from app.schemas import project_schemas
 from app.core import security
 from datetime import datetime, timezone
+import pandas as pd
+import io
 
 router = APIRouter()
 
@@ -376,3 +379,139 @@ def get_assigned_tasks(assignee_id: Optional[int] = None, db: Session = Depends(
     if assignee_id:
         query = query.filter(sql_models.Task.assignee_id == assignee_id)
     return query.all()
+
+# --- Excel Template & Import ---
+
+@router.get("/tasks/template", tags=["WBS"])
+def download_wbs_template():
+    """Generate a sample Excel template for WBS tasks."""
+    df = pd.DataFrame([
+        {
+            "Phase Name": "1. INITIATING",
+            "Task Name": "Prepare Project Charter",
+            "Description": "Define project scope and objectives.",
+            "Assignee Email": "staff@example.com",
+            "Status": "not_started",
+            "Start Date (YYYY-MM-DD)": "2026-02-10",
+            "Finish Date (YYYY-MM-DD)": "2026-02-15",
+            "Due Date (YYYY-MM-DD)": "2026-02-15"
+        },
+        {
+            "Phase Name": "1. INITIATING",
+            "Task Name": "Stakeholder Analysis",
+            "Description": "Identify key stakeholders.",
+            "Assignee Email": "staff@example.com",
+            "Status": "not_started",
+            "Start Date (YYYY-MM-DD)": "2026-02-16",
+            "Finish Date (YYYY-MM-DD)": "2026-02-20",
+            "Due Date (YYYY-MM-DD)": "2026-02-20"
+        },
+        {
+            "Phase Name": "2. PLANNING",
+            "Task Name": "Define WBS",
+            "Description": "Create detailed WBS breakdown.",
+            "Assignee Email": "hod@example.com",
+            "Status": "not_started",
+            "Start Date (YYYY-MM-DD)": "2026-02-21",
+            "Finish Date (YYYY-MM-DD)": "2026-02-28",
+            "Due Date (YYYY-MM-DD)": "2026-02-28"
+        }
+    ])
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Tasks')
+    
+    output.seek(0)
+    
+    headers = {
+        'Content-Disposition': 'attachment; filename="wbs_template.xlsx"'
+    }
+    return StreamingResponse(output, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+@router.post("/projects/{project_id}/tasks/import", tags=["WBS"])
+async def import_project_tasks(project_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """Import WBS and tasks from an Excel file."""
+    # Verify project exists
+    project = db.query(sql_models.Project).filter(sql_models.Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    contents = await file.read()
+    df = pd.read_excel(io.BytesIO(contents))
+
+    required_columns = ["Phase Name", "Task Name", "Due Date (YYYY-MM-DD)"]
+    for col in required_columns:
+        if col not in df.columns:
+            raise HTTPException(status_code=400, detail=f"Missing required column: {col}")
+
+    # Process rows
+    created_phases = 0
+    created_tasks = 0
+    
+    # Map for phases to avoid redundant queries
+    phase_map = {} # name -> id
+    
+    for _, row in df.iterrows():
+        phase_name = str(row.get("Phase Name", "Uncategorized")).strip()
+        task_name = str(row.get("Task Name", "")).strip()
+        if not task_name: continue
+
+        # 1. Handle Phase
+        if phase_name not in phase_map:
+            # Check if exists in DB for this project
+            db_phase = db.query(sql_models.WBS).filter(sql_models.WBS.project_id == project_id, sql_models.WBS.name == phase_name).first()
+            if not db_phase:
+                db_phase = sql_models.WBS(project_id=project_id, name=phase_name)
+                db.add(db_phase)
+                db.flush() # Get ID
+                created_phases += 1
+            phase_map[phase_name] = db_phase.id
+            
+        wbs_id = phase_map[phase_name]
+        
+        # 2. Get Assignee
+        assignee_id = None
+        email = str(row.get("Assignee Email", "")).strip()
+        if email:
+            user = db.query(sql_models.User).filter(sql_models.User.email == email).first()
+            if user:
+                assignee_id = user.id
+        
+        # 3. Handle Dates & Status
+        status = row.get("Status", "not_started")
+        if status not in [s.value for s in sql_models.TaskStatus]:
+            status = "not_started"
+            
+        def parse_date(val):
+            if pd.isna(val) or not val: return None
+            try:
+                if isinstance(val, datetime): return val
+                return datetime.strptime(str(val).split(' ')[0], "%Y-%m-%d")
+            except:
+                return None
+
+        due_date = parse_date(row.get("Due Date (YYYY-MM-DD)"))
+        if not due_date:
+             # Default to project end date or today if missing
+             due_date = project.end_date if project.end_date else datetime.now()
+
+        new_task = sql_models.Task(
+            wbs_id=wbs_id,
+            name=task_name,
+            description=str(row.get("Description", "")) if not pd.isna(row.get("Description")) else None,
+            assignee_id=assignee_id,
+            status=status,
+            planned_start=parse_date(row.get("Start Date (YYYY-MM-DD)")),
+            planned_end=parse_date(row.get("Finish Date (YYYY-MM-DD)")),
+            due_date=due_date
+        )
+        db.add(new_task)
+        created_tasks += 1
+
+    db.commit()
+    return {
+        "message": f"Successfully imported {created_tasks} tasks across {created_phases} new phases.",
+        "tasks_created": created_tasks,
+        "phases_created": created_phases
+    }

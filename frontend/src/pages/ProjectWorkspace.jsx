@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask, updateProjectWBS, updateProjectTask, bulkDeleteProjectTasks } from '../services/projects';
+import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask, updateProjectWBS, updateProjectTask, bulkDeleteProjectTasks, downloadWBSTemplate, importWBSTasks } from '../services/projects';
 import { getUsers } from '../services/users';
 import {
     Calendar,
@@ -17,8 +17,9 @@ import {
     Pencil,
     X,
     Briefcase,
-    Trash2,
-    GitBranch
+    GitBranch,
+    Download,
+    Upload
 } from 'lucide-react';
 import clsx from 'clsx';
 import { formatDate } from '../utils/dateUtils';
@@ -381,6 +382,39 @@ export default function ProjectWorkspace() {
         }
     }
 
+    async function handleDownloadTemplate() {
+        try {
+            const blob = await downloadWBSTemplate();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'WBS_Template.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            alert("Failed to download template: " + err.message);
+        }
+    }
+
+    async function handleImportWBS(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!window.confirm("This will import phases and tasks from the Excel file. Proceed?")) return;
+
+        try {
+            const result = await importWBSTasks(id, file);
+            alert(result.message);
+            await loadAllData();
+        } catch (err) {
+            alert("Failed to import: " + err.message);
+        } finally {
+            e.target.value = null; // Reset input
+        }
+    }
+
     async function handleBulkDelete() {
         if (selectedTaskIds.length === 0) return;
         if (!window.confirm(`Are you sure you want to delete ${selectedTaskIds.length} tasks?`)) return;
@@ -708,6 +742,22 @@ export default function ProjectWorkspace() {
                                         <Trash2 size={16} /> Delete Selected ({selectedTaskIds.length})
                                     </button>
                                 )}
+                                <button
+                                    onClick={handleDownloadTemplate}
+                                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm"
+                                    title="Download Excel Template"
+                                >
+                                    <Download size={16} /> Template
+                                </button>
+                                <label className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm cursor-pointer" title="Import WBS from Excel">
+                                    <Upload size={16} /> Import
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept=".xlsx, .xls"
+                                        onChange={handleImportWBS}
+                                    />
+                                </label>
                                 <button
                                     onClick={() => {
                                         if (wbs.length > 0) {
