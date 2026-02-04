@@ -34,6 +34,7 @@ const SIDEBAR_ITEMS = {
     ],
     hod: [
         { label: 'Portfolio', path: '/portfolio', icon: PieChart },
+        { label: 'All Projects', path: '/workspace', icon: Briefcase },
         { label: 'Approvals', path: '/portfolio/approvals', icon: ListTodo },
         { label: 'Document Tracker', path: '/documents', icon: FileText },
     ],
