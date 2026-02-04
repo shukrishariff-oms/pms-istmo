@@ -451,6 +451,19 @@ async def import_project_tasks(project_id: int, file: UploadFile = File(...), db
     
     # Map for phases to avoid redundant queries
     phase_map = {} # name -> id
+
+    def parse_date(val):
+        if pd.isna(val) or not val: return None
+        try:
+            if isinstance(val, datetime): return val
+            # Handle float/int timestamps from Excel if pandas read them that way
+            return pd.to_datetime(val).to_pydatetime()
+        except:
+            try:
+                # Fallback to manual string parsing if to_datetime fails
+                return datetime.strptime(str(val).split(' ')[0], "%Y-%m-%d")
+            except:
+                return None
     
     for _, row in df.iterrows():
         phase_name = str(row.get("Phase Name", "Uncategorized")).strip()
@@ -483,18 +496,13 @@ async def import_project_tasks(project_id: int, file: UploadFile = File(...), db
         if status not in [s.value for s in sql_models.TaskStatus]:
             status = "not_started"
             
-        def parse_date(val):
-            if pd.isna(val) or not val: return None
-            try:
-                if isinstance(val, datetime): return val
-                return datetime.strptime(str(val).split(' ')[0], "%Y-%m-%d")
-            except:
-                return None
-
+        planned_start = parse_date(row.get("Start Date (YYYY-MM-DD)"))
+        planned_end = parse_date(row.get("Finish Date (YYYY-MM-DD)"))
         due_date = parse_date(row.get("Due Date (YYYY-MM-DD)"))
+
         if not due_date:
-             # Default to project end date or today if missing
-             due_date = project.end_date if project.end_date else datetime.now()
+             # Fallback to planned_end, then project end date, then now
+             due_date = planned_end if planned_end else (project.end_date if project.end_date else datetime.now())
 
         new_task = sql_models.Task(
             wbs_id=wbs_id,
@@ -502,8 +510,8 @@ async def import_project_tasks(project_id: int, file: UploadFile = File(...), db
             description=str(row.get("Description", "")) if not pd.isna(row.get("Description")) else None,
             assignee_id=assignee_id,
             status=status,
-            planned_start=parse_date(row.get("Start Date (YYYY-MM-DD)")),
-            planned_end=parse_date(row.get("Finish Date (YYYY-MM-DD)")),
+            planned_start=planned_start,
+            planned_end=planned_end,
             due_date=due_date
         )
         db.add(new_task)
