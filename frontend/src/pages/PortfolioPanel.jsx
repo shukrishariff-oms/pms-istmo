@@ -125,10 +125,10 @@ export default function PortfolioPanel() {
                                                     </span>
                                                 </div>
                                                 <span className={clsx(
-                                                    "text-xs px-1.5 py-0.5 rounded shrink-0",
-                                                    t.status === 'completed' ? "bg-green-50 text-green-600" :
-                                                        t.status === 'in_progress' ? "bg-blue-50 text-blue-600" :
-                                                            t.is_overdue ? "bg-red-50 text-red-600" : "bg-slate-100 text-slate-500"
+                                                    "text-[10px] font-black px-1.5 py-0.5 rounded shrink-0 uppercase tracking-tighter",
+                                                    t.status === 'completed' ? "bg-emerald-600 text-white" :
+                                                        t.status === 'in_progress' ? "bg-blue-600 text-white" :
+                                                            t.is_overdue ? "bg-red-50 text-red-600 border border-red-200" : "bg-slate-100 text-slate-500"
                                                 )}>
                                                     {t.status === 'in_progress' ? 'WIP' : t.status === 'completed' ? 'DONE' : t.is_overdue ? 'DELAY' : 'TODO'}
                                                 </span>

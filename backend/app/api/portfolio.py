@@ -51,9 +51,11 @@ def get_portfolio_dashboard(db: Session = Depends(get_db)):
             t_planned_start = t.planned_start.replace(tzinfo=timezone.utc) if t.planned_start and t.planned_start.tzinfo is None else (t.planned_start.astimezone(timezone.utc) if t.planned_start else None)
 
             # --- This Month's Activities ---
-            # Criteria: Overdue OR (Ends in current month) OR (In Progress)
+            # Criteria: Overdue OR (Starts in current month) OR (Ends in current month) OR (In Progress)
             in_current_month = False
-            if t_planned_end and t_planned_end.month == current_month and t_planned_end.year == current_year:
+            if t_planned_start and t_planned_start.month == current_month and t_planned_start.year == current_year:
+                in_current_month = True
+            elif t_planned_end and t_planned_end.month == current_month and t_planned_end.year == current_year:
                 in_current_month = True
             
             if is_overdue or in_current_month or t_status == "in_progress":
