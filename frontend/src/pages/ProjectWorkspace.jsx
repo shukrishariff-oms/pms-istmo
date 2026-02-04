@@ -121,52 +121,51 @@ export default function ProjectWorkspace() {
         due_date: ''
     });
 
-    useEffect(() => {
-        async function loadList() {
-            setLoading(true);
-            try {
-                const role = localStorage.getItem('role');
-                const userId = role === 'staff' ? localStorage.getItem('user_id') : null;
+    async function loadAllData() {
+        if (!selectedProjectId) return;
+        setLoading(true);
+        setError(null);
+        try {
+            const [p, w, pay] = await Promise.all([
+                getProjectDetails(selectedProjectId),
+                getProjectWBS(selectedProjectId),
+                getProjectPayments(selectedProjectId)
+            ]);
+            setProject(p);
+            setWbs(w);
+            setPayments(pay);
+        } catch (err) {
+            console.error(err);
+            setError("Failed to load project details. Please check your connection or database.");
+        } finally {
+            setLoading(false);
+        }
+    }
 
-                const list = await getProjects(userId);
-                setProjectsList(list);
-                if (list.length > 0) {
-                    setSelectedProjectId(list[0].id);
-                } else {
-                    setLoading(false);
-                }
-            } catch (err) {
-                console.error(err);
-                setError("Failed to fetch project list. Please check your connection.");
+    async function loadList() {
+        try {
+            const role = localStorage.getItem('role');
+            const userId = role === 'staff' ? localStorage.getItem('user_id') : null;
+
+            const list = await getProjects(userId);
+            setProjectsList(list);
+            if (list.length > 0) {
+                if (!selectedProjectId) setSelectedProjectId(list[0].id);
+            } else {
                 setLoading(false);
             }
+        } catch (err) {
+            console.error(err);
+            setError("Failed to fetch project list. Please check your connection.");
+            setLoading(false);
         }
+    }
+    useEffect(() => {
         loadList();
     }, []);
 
     useEffect(() => {
-        if (!selectedProjectId) return;
-
-        async function loadData() {
-            setLoading(true);
-            setError(null);
-            try {
-                const [p, w, pay] = await Promise.all([
-                    getProjectDetails(selectedProjectId),
-                    getProjectWBS(selectedProjectId),
-                    getProjectPayments(selectedProjectId)
-                ]);
-                setProject(p);
-                setWbs(w);
-                setPayments(pay);
-            } catch (err) {
-                console.error(err);
-                setError("Failed to load project details. Please check your connection or database.");
-            } finally {
-                setLoading(false);
-            }
-        }
-        loadData();
+        loadAllData();
     }, [selectedProjectId]);
 
     useEffect(() => {
@@ -267,8 +266,7 @@ export default function ProjectWorkspace() {
         try {
             const nextStatus = pay.status === 'paid' ? 'unpaid' : 'paid';
             await updateProjectPayment(pay.id, { status: nextStatus });
-            const updatedPay = await getProjectPayments(selectedProjectId);
-            setPayments(updatedPay);
+            await loadAllData();
         } catch (err) {
             alert("Failed to update status: " + err.message);
         }
@@ -364,12 +362,15 @@ export default function ProjectWorkspace() {
                 planned_start: taskFormData.planned_start ? new Date(taskFormData.planned_start).toISOString() : null,
                 due_date: new Date(taskFormData.due_date).toISOString()
             };
-            await updateProjectTask(selectedTaskItem.id, payload);
-            const w = await getProjectWBS(selectedProjectId);
-            setWbs(w);
+            if (selectedTaskItem) {
+                await updateProjectTask(selectedTaskItem.id, payload);
+            } else {
+                await createProjectTask(selectedProjectId, payload);
+            }
+            await loadAllData();
             setIsEditTaskModalOpen(false);
         } catch (err) {
-            alert("Failed to update task: " + err.message);
+            alert("Failed to save task: " + err.message);
         }
     }
 
