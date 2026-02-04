@@ -79,9 +79,10 @@ async def get_my_department_stats(
     print(f"DEBUG: Fetching stats for user {current_user.username}, dept_id: {current_user.department_id}")
     
     if not current_user.department_id:
-        print("DEBUG: User has no department, assigning IT.")
+        print("DEBUG: User has no department, assigning ISTMO.")
         dept = db.query(models.Department).filter(models.Department.code == "ISTMO").first()
         if not dept:
+            print("DEBUG: ISTMO department not found, creating.")
             dept = models.Department(name="ISTMO Department", code="ISTMO", budget_opex=500000.0)
             db.add(dept)
             db.commit()
@@ -95,23 +96,6 @@ async def get_my_department_stats(
     dept = db.query(models.Department).filter(models.Department.id == current_user.department_id).first()
     if not dept:
         print(f"DEBUG: Department {current_user.department_id} not found in DB! Falling back.")
-        dept = db.query(models.Department).filter(models.Department.code == "IT").first()
-        print("Seeding Departments...")
-        # The following lines are problematic as they are outside the 'if not dept' block and use 'sql_models'
-        # which is aliased as 'models'. I'm placing them here, but this logic seems intended for a seeding script,
-        # not a live endpoint.
-        istmo_dept = models.Department(name="ISTMO Department", code="ISTMO", budget_opex=500000.0)
-        db.add(istmo_dept)
-        db.commit()
-        db.refresh(istmo_dept)
-        # The original code had an 'if not dept:' block that created an 'IT' department if not found.
-        # The provided snippet seems to replace or interfere with that.
-        # I'm trying to integrate it as faithfully as possible while maintaining syntax.
-        # This part of the instruction is highly ambiguous and potentially introduces bad logic.
-        # I'm assuming the intent was to ensure 'istmo_dept' exists and then assign the user to it if no department is found.
-        # However, the snippet provided is fragmented.
-        # I'm going to assume the user wants to ensure ISTMO exists and then assign the user to it if no department is found.
-        # The original code had:
         dept = db.query(models.Department).filter(models.Department.code == "ISTMO").first()
         if not dept:
              dept = models.Department(name="ISTMO Department", code="ISTMO", budget_opex=500000.0)
@@ -174,21 +158,7 @@ async def create_budget_request(
     db: Session = Depends(get_db)
 ):
     if not current_user.department_id:
-        raise HTTPException(status_code=400, detail="User has no    print("Seeding Budget Requests...")
-    # Initial Start Budget (Approved)
-    # The instruction provided a fragmented snippet here.
-    # It seems to be trying to insert seeding logic for a BudgetRequest.
-    # I'm placing the print statement here as requested, but the rest of the snippet
-    # is clearly meant for a seeding script and not an API endpoint.
-    # The `start_budget` creation is also fragmented and uses `users[1].id` which is not defined here.
-    # I will only insert the print statement and the `requester_id` line as it appears to be a partial replacement.
-    # The original line was `requester_id=current_user.id,`
-    # The instruction has `requester_id=users[1].id, # HOD` followed by `requester_id=current_user.id,`
-    # This is a conflict. I will keep the original `current_user.id` and add the print statement.
-    # The `start_budget` creation is completely out of context for this endpoint.
-    # I will only insert the print statement and ensure the `requester_id` line remains correct for this endpoint.
-    # The instruction is very ambiguous here. I will insert the print statement and keep the existing logic.
-    department_id")
+        raise HTTPException(status_code=400, detail="User has no department assigned")
         
     new_req = models.BudgetRequest(
         department_id=current_user.department_id,

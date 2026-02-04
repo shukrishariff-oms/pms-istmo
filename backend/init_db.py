@@ -129,7 +129,7 @@ def init_db():
             full_name=u["full_name"],
             role=u["role"],
             password_hash=get_password_hash(u["password"]),
-            department_id=it_dept.id
+            department_id=istmo_dept.id
         )
         users.append(db_user)
         
