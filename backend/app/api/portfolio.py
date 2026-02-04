@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import extract, and_, or_
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.db.database import get_db
 from app.models import sql_models
 
@@ -14,7 +14,7 @@ def get_portfolio_dashboard(db: Session = Depends(get_db)):
     
     dashboard_data = []
     
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     current_month = now.month
     current_year = now.year
     
@@ -61,11 +61,20 @@ def get_portfolio_dashboard(db: Session = Depends(get_db)):
                 project_status = sql_models.ProjectStatus.DELAYED
             else:
                 # Check ALL overdue tasks for this project (not just this month)
-                overdue_tasks_exist = db.query(sql_models.Task).filter(
+                # Ensure we compare aware datetimes and handle None
+                overdue_tasks_exist = False
+                all_tasks = db.query(sql_models.Task).filter(
                     sql_models.Task.wbs_item.has(project_id=p.id),
-                    sql_models.Task.status != sql_models.TaskStatus.COMPLETED,
-                    sql_models.Task.due_date < now
-                ).first() is not None
+                    sql_models.Task.status != sql_models.TaskStatus.COMPLETED
+                ).all()
+                
+                for t in all_tasks:
+                    if t.due_date:
+                        t_aware = t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)
+                        if t_aware < now:
+                            overdue_tasks_exist = True
+                            break
+                            
                 if overdue_tasks_exist:
                     project_status = sql_models.ProjectStatus.DELAYED
 
