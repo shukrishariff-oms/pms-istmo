@@ -17,6 +17,7 @@ import {
     Pencil,
     X,
     Briefcase,
+    Trash2,
     GitBranch,
     Download,
     Upload
@@ -405,7 +406,7 @@ export default function ProjectWorkspace() {
         if (!window.confirm("This will import phases and tasks from the Excel file. Proceed?")) return;
 
         try {
-            const result = await importWBSTasks(id, file);
+            const result = await importWBSTasks(selectedProjectId, file);
             alert(result.message);
             await loadAllData();
         } catch (err) {
