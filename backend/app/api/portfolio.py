@@ -54,11 +54,26 @@ def get_portfolio_dashboard(db: Session = Depends(get_db)):
             sql_models.Payment.planned_date < now
         ).all()
         
+        # D. Dynamic Status
+        project_status = p.status
+        if project_status != sql_models.ProjectStatus.COMPLETED:
+            if len(payment_issues) > 0:
+                project_status = sql_models.ProjectStatus.DELAYED
+            else:
+                # Check ALL overdue tasks for this project (not just this month)
+                overdue_tasks_exist = db.query(sql_models.Task).filter(
+                    sql_models.Task.wbs_item.has(project_id=p.id),
+                    sql_models.Task.status != sql_models.TaskStatus.COMPLETED,
+                    sql_models.Task.due_date < now
+                ).first() is not None
+                if overdue_tasks_exist:
+                    project_status = sql_models.ProjectStatus.DELAYED
+
         dashboard_data.append({
             "project_id": p.id,
             "code": p.code,
             "name": p.name,
-            "status": p.status,
+            "status": project_status,
             "owner": p.owner.full_name if p.owner else "Unassigned",
             "assist_coordinator": p.assist_coordinator.full_name if p.assist_coordinator else None,
             "tasks_this_month": [

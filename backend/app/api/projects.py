@@ -53,6 +53,21 @@ def get_projects(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
         else:
             p.task_progress = 0.0
             
+        # 3. Derive Dynamic Status
+        now = datetime.now()
+        # COMPLETED status is terminal, don't override it if it's already completed in DB
+        if p.status != sql_models.ProjectStatus.COMPLETED:
+            overdue_tasks = any(
+                t.due_date < now and t.status != sql_models.TaskStatus.COMPLETED 
+                for wbs in p.wbs_items for t in wbs.tasks if not t.sub_tasks
+            )
+            overdue_payments = any(
+                pay.planned_date < now and pay.status != sql_models.PaymentStatus.PAID 
+                for pay in p.payments
+            )
+            if overdue_tasks or overdue_payments:
+                p.status = sql_models.ProjectStatus.DELAYED
+            
     return projects
 
 @router.post("/projects", tags=["Projects"], response_model=project_schemas.ProjectRead)
@@ -111,6 +126,20 @@ def get_project_details(project_id: int, db: Session = Depends(get_db)):
         project.task_progress = (completed_tasks / total_tasks) * 100
     else:
         project.task_progress = 0.0
+        
+    # 3. Derive Dynamic Status
+    now = datetime.now()
+    if project.status != sql_models.ProjectStatus.COMPLETED:
+        overdue_tasks = any(
+            t.due_date < now and t.status != sql_models.TaskStatus.COMPLETED 
+            for wbs in project.wbs_items for t in wbs.tasks if not t.sub_tasks
+        )
+        overdue_payments = any(
+            pay.planned_date < now and pay.status != sql_models.PaymentStatus.PAID 
+            for pay in project.payments
+        )
+        if overdue_tasks or overdue_payments:
+            project.status = sql_models.ProjectStatus.DELAYED
         
     return project
 
