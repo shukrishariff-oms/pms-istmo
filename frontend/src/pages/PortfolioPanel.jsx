@@ -118,7 +118,7 @@ export default function PortfolioPanel() {
                                                     )}
                                                     <span className={clsx(
                                                         "truncate",
-                                                        t.status === 'completed' && "line-through text-slate-400",
+                                                        t.status === 'completed' && "text-emerald-600 font-medium",
                                                         t.is_overdue && "text-red-600 font-bold"
                                                     )}>
                                                         {t.name}
