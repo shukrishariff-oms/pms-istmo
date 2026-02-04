@@ -241,6 +241,16 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Task deleted successfully"}
 
+@router.post("/tasks/bulk-delete", tags=["WBS"])
+def bulk_delete_tasks(task_ids: List[int], db: Session = Depends(get_db)):
+    if not task_ids:
+        return {"message": "No tasks selected"}
+    
+    # Delete tasks with IDs in the provided list
+    db.query(sql_models.Task).filter(sql_models.Task.id.in_(task_ids)).delete(synchronize_session=False)
+    db.commit()
+    return {"message": f"Successfully deleted {len(task_ids)} tasks"}
+
 @router.put("/wbs/{wbs_id}", tags=["WBS"])
 def update_wbs_phase(
     wbs_id: int, 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask, updateProjectWBS, updateProjectTask } from '../services/projects';
+import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask, updateProjectWBS, updateProjectTask, bulkDeleteProjectTasks } from '../services/projects';
 import { getUsers } from '../services/users';
 import {
     Calendar,
@@ -73,6 +73,7 @@ export default function ProjectWorkspace() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
+    const [selectedTaskIds, setSelectedTaskIds] = useState([]);
 
     // Edit Modal State
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -380,6 +381,20 @@ export default function ProjectWorkspace() {
         }
     }
 
+    async function handleBulkDelete() {
+        if (selectedTaskIds.length === 0) return;
+        if (!window.confirm(`Are you sure you want to delete ${selectedTaskIds.length} tasks?`)) return;
+
+        try {
+            await bulkDeleteProjectTasks(selectedTaskIds);
+            setSelectedTaskIds([]);
+            await loadAllData();
+            alert("Tasks deleted successfully");
+        } catch (err) {
+            alert("Failed to delete tasks: " + err.message);
+        }
+    }
+
     if (loading) return (
         <div className="flex items-center justify-center min-h-[400px]">
             <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
@@ -670,7 +685,7 @@ export default function ProjectWorkspace() {
                             </div>
                         )}
 
-                        <div className="p-4 border-b border-slate-100 bg-slate-50 flex justify-end">
+                        <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
                             <button
                                 onClick={async () => {
                                     const phaseName = prompt("Enter new Phase Name (e.g., 4.0 Testing):");
@@ -680,35 +695,59 @@ export default function ProjectWorkspace() {
                                         setWbs(w);
                                     }
                                 }}
-                                className="mr-2 flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-all shadow-sm"
                             >
                                 <Plus size={16} /> Add Phase
                             </button>
-                            <button
-                                onClick={() => {
-                                    if (wbs.length > 0) {
-                                        const today = new Date().toISOString().split('T')[0];
-                                        setNewTaskData({
-                                            wbs_id: wbs[0].id,
-                                            parent_id: null,
-                                            name: '',
-                                            start_date: today,
-                                            end_date: today
-                                        });
-                                        setIsTaskModalOpen(true);
-                                    } else {
-                                        alert("Please create a Phase first.");
-                                    }
-                                }}
-                                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm"
-                            >
-                                <Plus size={16} /> Add Task
-                            </button>
+                            <div className="flex items-center gap-2">
+                                {selectedTaskIds.length > 0 && (
+                                    <button
+                                        onClick={handleBulkDelete}
+                                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 shadow-sm animate-in fade-in slide-in-from-right-2"
+                                    >
+                                        <Trash2 size={16} /> Delete Selected ({selectedTaskIds.length})
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => {
+                                        if (wbs.length > 0) {
+                                            const today = new Date().toISOString().split('T')[0];
+                                            setNewTaskData({
+                                                wbs_id: wbs[0].id,
+                                                parent_id: null,
+                                                name: '',
+                                                start_date: today,
+                                                end_date: today
+                                            });
+                                            setIsTaskModalOpen(true);
+                                        } else {
+                                            alert("Please create a Phase first.");
+                                        }
+                                    }}
+                                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm"
+                                >
+                                    <Plus size={16} /> Add Task
+                                </button>
+                            </div>
                         </div>
                         <div className="overflow-x-auto min-h-[400px]">
                             <table className="w-full text-left border-collapse">
                                 <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold sticky top-0 bg-white z-10 shadow-sm">
                                     <tr>
+                                        <th className="px-4 py-4 border-b border-slate-200 w-10 text-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedTaskIds.length === wbs.flatMap(w => w.tasks || []).length && wbs.flatMap(w => w.tasks || []).length > 0}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedTaskIds(wbs.flatMap(w => w.tasks || []).map(t => t.id));
+                                                    } else {
+                                                        setSelectedTaskIds([]);
+                                                    }
+                                                }}
+                                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                            />
+                                        </th>
                                         <th className="px-6 py-4 border-b border-slate-200 w-16 text-center">ID</th>
                                         <th className="px-6 py-4 border-b border-slate-200">WBS / Task Name</th>
                                         <th className="px-6 py-4 border-b border-slate-200">Assignee</th>
@@ -721,6 +760,7 @@ export default function ProjectWorkspace() {
                                     {[...wbs].sort((a, b) => a.id - b.id).map((phase, pIdx) => (
                                         <>
                                             <tr key={`phase-${phase.id}`} className="bg-slate-50/50 border-y border-slate-100">
+                                                <td className="px-4 py-4 border-b border-slate-100"></td>
                                                 <td className="px-6 py-4 text-xs text-slate-400 font-bold text-center">{pIdx + 1}</td>
                                                 <td className="px-6 py-4 text-sm font-bold text-slate-800 uppercase tracking-tight">
                                                     <div className="flex items-center gap-2">
@@ -761,7 +801,24 @@ export default function ProjectWorkspace() {
 
                                                             return (
                                                                 <React.Fragment key={task.id}>
-                                                                    <tr className="group hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0">
+                                                                    <tr className={clsx(
+                                                                        "group hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0",
+                                                                        selectedTaskIds.includes(task.id) && "bg-blue-50/50"
+                                                                    )}>
+                                                                        <td className="px-4 py-4 text-center">
+                                                                            <input
+                                                                                type="checkbox"
+                                                                                checked={selectedTaskIds.includes(task.id)}
+                                                                                onChange={(e) => {
+                                                                                    if (e.target.checked) {
+                                                                                        setSelectedTaskIds([...selectedTaskIds, task.id]);
+                                                                                    } else {
+                                                                                        setSelectedTaskIds(selectedTaskIds.filter(id => id !== task.id));
+                                                                                    }
+                                                                                }}
+                                                                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                                            />
+                                                                        </td>
                                                                         <td className="px-6 py-4 text-xs text-slate-400 text-center font-mono">{currentPrefix}</td>
                                                                         <td className="px-6 py-4 text-sm text-slate-700 relative" style={{ paddingLeft: `${depth * 24 + 48}px` }}>
                                                                             <div className="absolute left-6 top-0 bottom-0 w-px bg-slate-100"></div>

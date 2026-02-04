@@ -132,6 +132,16 @@ export const deleteProjectTask = async (taskId) => {
     return response.json();
 };
 
+export const bulkDeleteProjectTasks = async (taskIds) => {
+    const response = await fetch(`${API_URL}/tasks/bulk-delete`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(taskIds)
+    });
+    if (!response.ok) throw new Error("Failed to delete tasks");
+    return response.json();
+};
+
 export const updateProjectWBS = async (wbsId, data) => {
     const response = await fetch(`${API_URL}/wbs/${wbsId}`, {
         method: 'PUT',
