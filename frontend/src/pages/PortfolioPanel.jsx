@@ -110,15 +110,27 @@ export default function PortfolioPanel() {
                                     {proj.tasks_this_month.length > 0 ? (
                                         proj.tasks_this_month.map(t => (
                                             <div key={t.id} className="flex items-start justify-between text-sm group">
-                                                <span className={clsx("truncate pr-2", t.status === 'completed' && "line-through text-slate-400")}>
-                                                    {t.name}
-                                                </span>
+                                                <div className="flex items-center gap-2 overflow-hidden">
+                                                    {t.is_overdue && (
+                                                        <span className="shrink-0 bg-red-600 text-[10px] text-white px-1 rounded font-black animate-pulse">
+                                                            OVERDUE
+                                                        </span>
+                                                    )}
+                                                    <span className={clsx(
+                                                        "truncate",
+                                                        t.status === 'completed' && "line-through text-slate-400",
+                                                        t.is_overdue && "text-red-600 font-bold"
+                                                    )}>
+                                                        {t.name}
+                                                    </span>
+                                                </div>
                                                 <span className={clsx(
-                                                    "text-xs px-1.5 py-0.5 rounded",
+                                                    "text-xs px-1.5 py-0.5 rounded shrink-0",
                                                     t.status === 'completed' ? "bg-green-50 text-green-600" :
-                                                        t.status === 'in_progress' ? "bg-blue-50 text-blue-600" : "bg-slate-100 text-slate-500"
+                                                        t.status === 'in_progress' ? "bg-blue-50 text-blue-600" :
+                                                            t.is_overdue ? "bg-red-50 text-red-600" : "bg-slate-100 text-slate-500"
                                                 )}>
-                                                    {t.status === 'in_progress' ? 'WIP' : t.status === 'completed' ? 'DONE' : 'TODO'}
+                                                    {t.status === 'in_progress' ? 'WIP' : t.status === 'completed' ? 'DONE' : t.is_overdue ? 'DELAY' : 'TODO'}
                                                 </span>
                                             </div>
                                         ))

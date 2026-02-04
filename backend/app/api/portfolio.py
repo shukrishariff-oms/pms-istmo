@@ -27,55 +27,77 @@ def get_portfolio_dashboard(db: Session = Depends(get_db)):
         next_year = current_year
         
     for p in projects:
-        # A. Tasks This Month (Active or Completed this month)
-        # Filter: planned_end is in current month OR actual_end is in current month
-        tasks_this_month = db.query(sql_models.Task).filter(
-            sql_models.Task.wbs_item.has(project_id=p.id),
-            or_(
-                and_(extract('month', sql_models.Task.planned_end) == current_month, extract('year', sql_models.Task.planned_end) == current_year),
-                and_(extract('month', sql_models.Task.actual_end) == current_month, extract('year', sql_models.Task.actual_end) == current_year),
-                # Also include tasks currently IN PROGRESS regardless of dates overlap
-                sql_models.Task.status == sql_models.TaskStatus.IN_PROGRESS
-            )
-        ).limit(5).all()
+        # A. Fetch all tasks for this project to categorize in Python
+        # This is more robust than SQLite-specific extract calls
+        project_tasks = db.query(sql_models.Task).filter(
+            sql_models.Task.wbs_item.has(project_id=p.id)
+        ).all()
 
-        # B. Tasks Next Month (Forecast)
-        # Filter: planned_start is in next month
-        tasks_next_month = db.query(sql_models.Task).filter(
-            sql_models.Task.wbs_item.has(project_id=p.id),
-            and_(extract('month', sql_models.Task.planned_start) == next_month, extract('year', sql_models.Task.planned_start) == next_year)
-        ).limit(5).all()
-        
+        tasks_this_month_data = [] # Will include Current Month + Overdue
+        tasks_next_month_data = [] # Forecast
+
+        for t in project_tasks:
+            t_status = str(t.status).lower()
+            
+            # 1. Handle Overdue (Completed tasks are never overdue)
+            is_overdue = False
+            if t_status != "completed" and t.due_date:
+                t_due = t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)
+                if t_due < now:
+                    is_overdue = True
+
+            # 2. Categorize
+            t_planned_end = t.planned_end.replace(tzinfo=timezone.utc) if t.planned_end and t.planned_end.tzinfo is None else (t.planned_end.astimezone(timezone.utc) if t.planned_end else None)
+            t_planned_start = t.planned_start.replace(tzinfo=timezone.utc) if t.planned_start and t.planned_start.tzinfo is None else (t.planned_start.astimezone(timezone.utc) if t.planned_start else None)
+
+            # --- This Month's Activities ---
+            # Criteria: Overdue OR (Ends in current month) OR (In Progress)
+            in_current_month = False
+            if t_planned_end and t_planned_end.month == current_month and t_planned_end.year == current_year:
+                in_current_month = True
+            
+            if is_overdue or in_current_month or t_status == "in_progress":
+                if len(tasks_this_month_data) < 8: # Limit to 8 items per project for UI cleanliness
+                    tasks_this_month_data.append({
+                        "id": t.id,
+                        "name": t.name,
+                        "status": t.status,
+                        "due": t.due_date,
+                        "is_overdue": is_overdue
+                    })
+
+            # --- Next Month Forecast ---
+            # Criteria: Planned to start next month
+            if t_planned_start and t_planned_start.month == next_month and t_planned_start.year == next_year:
+                if len(tasks_next_month_data) < 5:
+                    tasks_next_month_data.append({
+                        "id": t.id,
+                        "name": t.name,
+                        "start": t.planned_start
+                    })
+
         # C. Payment Issues (Sangkut)
-        # Unpaid and Overdue (planned_date < now)
         payment_issues = db.query(sql_models.Payment).filter(
             sql_models.Payment.project_id == p.id,
             sql_models.Payment.status != sql_models.PaymentStatus.PAID,
             sql_models.Payment.planned_date < now
         ).all()
         
-        # D. Dynamic Status
+        # D. Dynamic Status (Inherited from previous logic)
         project_status = p.status
         if project_status != sql_models.ProjectStatus.COMPLETED:
             if len(payment_issues) > 0:
                 project_status = sql_models.ProjectStatus.DELAYED
             else:
-                # Check ALL overdue tasks for this project (not just this month)
-                # Ensure we compare aware datetimes and handle None
-                overdue_tasks_exist = False
-                all_tasks = db.query(sql_models.Task).filter(
-                    sql_models.Task.wbs_item.has(project_id=p.id),
-                    sql_models.Task.status != sql_models.TaskStatus.COMPLETED
-                ).all()
-                
-                for t in all_tasks:
-                    if t.due_date:
-                        t_aware = t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)
-                        if t_aware < now:
-                            overdue_tasks_exist = True
-                            break
-                            
-                if overdue_tasks_exist:
+                overdue_exists = any(t['is_overdue'] for t in tasks_this_month_data if t['is_overdue'])
+                # Also check all tasks if not in the limited list
+                if not overdue_exists:
+                    overdue_exists = any(
+                        t.due_date and (t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)) < now
+                        and str(t.status).lower() != "completed"
+                        for t in project_tasks
+                    )
+                if overdue_exists:
                     project_status = sql_models.ProjectStatus.DELAYED
 
         dashboard_data.append({
@@ -85,14 +107,8 @@ def get_portfolio_dashboard(db: Session = Depends(get_db)):
             "status": project_status,
             "owner": p.owner.full_name if p.owner else "Unassigned",
             "assist_coordinator": p.assist_coordinator.full_name if p.assist_coordinator else None,
-            "tasks_this_month": [
-                {"id": t.id, "name": t.name, "status": t.status, "due": t.due_date} 
-                for t in tasks_this_month
-            ],
-            "tasks_next_month": [
-                {"id": t.id, "name": t.name, "start": t.planned_start} 
-                for t in tasks_next_month
-            ],
+            "tasks_this_month": tasks_this_month_data,
+            "tasks_next_month": tasks_next_month_data,
             "payment_issues": [
                 {"id": pay.id, "title": pay.title, "amount": pay.amount, "due": pay.planned_date}
                 for pay in payment_issues
