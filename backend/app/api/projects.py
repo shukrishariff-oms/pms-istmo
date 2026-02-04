@@ -53,10 +53,15 @@ def get_projects(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
     projects = query.all()
     
     for p in projects:
-        # 1. Calculate CAPEX Utilization
+        # 1. Calculate CAPEX Utilization (Dynamic Budget based on Planned Payments)
+        total_planned = sum(pm.amount for pm in p.payments if str(pm.payment_type).lower() == "capex")
         total_capex_paid = sum(pm.amount for pm in p.payments if str(pm.payment_type).lower() == "capex" and str(pm.status).lower() == "paid")
-        if p.budget_capex and p.budget_capex > 0:
-            p.capex_utilization = (total_capex_paid / p.budget_capex) * 100
+        
+        # Use total_planned as the base if budget_capex is not set
+        effective_budget = p.budget_capex if p.budget_capex and p.budget_capex > 0 else total_planned
+        
+        if effective_budget > 0:
+            p.capex_utilization = (total_capex_paid / effective_budget) * 100
         else:
             p.capex_utilization = 0.0
             
@@ -132,10 +137,15 @@ def get_project_details(project_id: int, db: Session = Depends(get_db)):
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
         
-    # Calculate Metrics
+    # Calculate Metrics (Dynamic Budget)
+    total_planned = sum(pm.amount for pm in project.payments if str(pm.payment_type).lower() == "capex")
     total_capex_paid = sum(pm.amount for pm in project.payments if str(pm.payment_type).lower() == "capex" and str(pm.status).lower() == "paid")
-    if project.budget_capex and project.budget_capex > 0:
-        project.capex_utilization = (total_capex_paid / project.budget_capex) * 100
+    
+    # Use total_planned as base budget
+    effective_budget = project.budget_capex if project.budget_capex and project.budget_capex > 0 else total_planned
+    
+    if effective_budget > 0:
+        project.capex_utilization = (total_capex_paid / effective_budget) * 100
     else:
         project.capex_utilization = 0.0
         

@@ -548,8 +548,10 @@ export default function ProjectWorkspace() {
                     </div>
                     <div className="flex flex-col items-end gap-3">
                         <div className="text-right">
-                            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Budget</p>
-                            <p className="text-2xl font-bold text-slate-900">MYR {((project.budget_capex || 0) + (project.budget_opex_allocation || 0)).toLocaleString()}</p>
+                            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Budget (Planned)</p>
+                            <p className="text-2xl font-bold text-slate-900">
+                                MYR {(payments.reduce((acc, p) => acc + p.amount, 0)).toLocaleString()}
+                            </p>
                         </div>
                         {localStorage.getItem('role') === 'admin' && (
                             <button
@@ -1242,13 +1244,14 @@ export default function ProjectWorkspace() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">CAPEX Budget (MYR)</label>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">Manual Budget Overwrite (Optional)</label>
                                 <input
                                     type="number"
                                     className="w-full border p-2 rounded-lg border-slate-200 outline-none"
                                     value={editFormData.budget_capex}
                                     onChange={e => setEditFormData({ ...editFormData, budget_capex: e.target.value })}
                                 />
+                                <p className="text-[10px] text-slate-400 mt-1 italic">Leave at 0 to auto-calculate from payments.</p>
                             </div>
 
                             <div>

@@ -229,8 +229,9 @@ export default function AdminDashboard() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 mb-1">CAPEX Budget (MYR)</label>
-                                <input type="number" className="w-full border p-2 rounded-lg" value={formData.budget_capex} onChange={e => setFormData({ ...formData, budget_capex: e.target.value })} />
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">CAPEX Budget (Optional)</label>
+                                <input type="number" className="w-full border p-2 rounded-lg bg-slate-50 border-slate-200" value={formData.budget_capex} onChange={e => setFormData({ ...formData, budget_capex: e.target.value })} />
+                                <p className="text-[10px] text-slate-400 mt-1 italic">Leave at 0 to auto-calculate from payments.</p>
                             </div>
 
                             <div className="col-span-2">
