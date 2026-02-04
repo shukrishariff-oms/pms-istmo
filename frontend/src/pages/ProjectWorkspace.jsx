@@ -65,10 +65,12 @@ const TaskStatusSelector = ({ task, onStatusChange }) => {
         not_started: "bg-slate-100 text-slate-600 border-slate-200",
         in_progress: "bg-blue-50 text-blue-600 border-blue-200",
         blocked: "bg-red-50 text-red-600 border-red-200",
-        completed: "bg-emerald-50 text-emerald-600 border-emerald-200"
+        completed: "bg-emerald-50 text-emerald-600 border-emerald-200",
+        delayed: "bg-red-100 text-red-700 border-red-200"
     };
 
-    const finalStatus = task.is_overdue && task.status !== 'completed' ? 'delayed' : task.status;
+    const isOverdue = task.is_overdue && task.status !== 'completed';
+    const finalStatus = isOverdue ? 'delayed' : task.status;
 
     return (
         <select
@@ -76,8 +78,8 @@ const TaskStatusSelector = ({ task, onStatusChange }) => {
             onChange={(e) => onStatusChange(task.id, e.target.value)}
             className={clsx(
                 "px-2 py-0.5 rounded-full text-[10px] font-bold border outline-none cursor-pointer transition-all hover:border-slate-400",
-                styles[task.status] || styles.not_started,
-                task.is_overdue && task.status !== 'completed' && "animate-pulse border-red-400 ring-1 ring-red-100"
+                styles[finalStatus] || styles.not_started,
+                isOverdue && "animate-pulse shadow-sm shadow-red-100"
             )}
         >
             <option value="not_started">NOT STARTED</option>
