@@ -54,21 +54,35 @@ def get_projects(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
         else:
             p.task_progress = 0.0
             
-        # 3. Derive Dynamic Status
+        # 3. Derive Dynamic Status & Set Task Overdue Flags
         now = datetime.now(timezone.utc)
+        any_task_overdue = False
+        for wbs in p.wbs_items:
+            for t in wbs.tasks:
+                t_status = str(t.status).lower()
+                t.is_overdue = False
+                if t_status != "completed":
+                    if t.due_date:
+                        t_due = t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)
+                        if t_due < now:
+                            t.is_overdue = True
+                    
+                    if not t.is_overdue and t_status == "not_started" and t.planned_start:
+                        t_start = t.planned_start.replace(tzinfo=timezone.utc) if t.planned_start.tzinfo is None else t.planned_start.astimezone(timezone.utc)
+                        if t_start < now:
+                            t.is_overdue = True
+                
+                if t.is_overdue and not t.sub_tasks:
+                    any_task_overdue = True
+
         # COMPLETED status is terminal, don't override it if it's already completed in DB
         if p.status != sql_models.ProjectStatus.COMPLETED:
-            overdue_tasks = any(
-                t.due_date and (t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)) < now 
-                and t.status != sql_models.TaskStatus.COMPLETED 
-                for wbs in p.wbs_items for t in wbs.tasks if not t.sub_tasks
-            )
             overdue_payments = any(
                 pay.planned_date and (pay.planned_date.replace(tzinfo=timezone.utc) if pay.planned_date.tzinfo is None else pay.planned_date.astimezone(timezone.utc)) < now 
                 and pay.status != sql_models.PaymentStatus.PAID 
                 for pay in p.payments
             )
-            if overdue_tasks or overdue_payments:
+            if any_task_overdue or overdue_payments:
                 p.status = sql_models.ProjectStatus.DELAYED
             
     return projects
@@ -130,20 +144,34 @@ def get_project_details(project_id: int, db: Session = Depends(get_db)):
     else:
         project.task_progress = 0.0
         
-    # 3. Derive Dynamic Status
+    # 3. Derive Dynamic Status & Set Task Overdue Flags
     now = datetime.now(timezone.utc)
+    any_task_overdue = False
+    for wbs in project.wbs_items:
+        for t in wbs.tasks:
+            t_status = str(t.status).lower()
+            t.is_overdue = False
+            if t_status != "completed":
+                if t.due_date:
+                    t_due = t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)
+                    if t_due < now:
+                        t.is_overdue = True
+                
+                if not t.is_overdue and t_status == "not_started" and t.planned_start:
+                    t_start = t.planned_start.replace(tzinfo=timezone.utc) if t.planned_start.tzinfo is None else t.planned_start.astimezone(timezone.utc)
+                    if t_start < now:
+                        t.is_overdue = True
+            
+            if t.is_overdue and not t.sub_tasks:
+                any_task_overdue = True
+
     if project.status != sql_models.ProjectStatus.COMPLETED:
-        overdue_tasks = any(
-            t.due_date and (t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)) < now 
-            and t.status != sql_models.TaskStatus.COMPLETED 
-            for wbs in project.wbs_items for t in wbs.tasks if not t.sub_tasks
-        )
         overdue_payments = any(
             pay.planned_date and (pay.planned_date.replace(tzinfo=timezone.utc) if pay.planned_date.tzinfo is None else pay.planned_date.astimezone(timezone.utc)) < now 
             and pay.status != sql_models.PaymentStatus.PAID 
             for pay in project.payments
         )
-        if overdue_tasks or overdue_payments:
+        if any_task_overdue or overdue_payments:
             project.status = sql_models.ProjectStatus.DELAYED
         
     return project

@@ -27,7 +27,7 @@ const API_URL = window.location.hostname === 'localhost' ? "http://localhost:800
 
 // --- Subcomponents ---
 
-const StatusBadge = ({ status }) => {
+const StatusBadge = ({ status, isOverdue }) => {
     const styles = {
         on_track: "bg-emerald-100 text-emerald-700 border-emerald-200",
         at_risk: "bg-amber-100 text-amber-700 border-amber-200",
@@ -45,9 +45,15 @@ const StatusBadge = ({ status }) => {
         paid: "bg-emerald-50 text-emerald-600 font-semibold"
     };
 
+    const finalStatus = isOverdue ? 'delayed' : (status || 'not_started');
+
     return (
-        <span className={clsx("px-2.5 py-0.5 rounded-full text-xs font-medium border", styles[status] || styles.not_started)}>
-            {(status || 'not_started').replace('_', ' ').toUpperCase()}
+        <span className={clsx(
+            "px-2.5 py-0.5 rounded-full text-xs font-medium border whitespace-nowrap",
+            styles[finalStatus] || styles.not_started,
+            isOverdue && "animate-pulse"
+        )}>
+            {finalStatus.replace('_', ' ').toUpperCase()}
         </span>
     );
 };
@@ -531,7 +537,7 @@ export default function ProjectWorkspace() {
                                             <p className="font-semibold text-slate-800">{task.name}</p>
                                             <p className="text-xs text-slate-500">Due: {formatDate(task.due_date)}</p>
                                         </div>
-                                        <StatusBadge status={task.status} />
+                                        <StatusBadge status={task.status} isOverdue={task.is_overdue} />
                                     </div>
                                 ))}
                                 {wbs.flatMap(w => w.tasks || []).filter(t => t.status === 'in_progress').length === 0 && (
@@ -546,16 +552,13 @@ export default function ProjectWorkspace() {
                                 At Risk / Delayed
                             </h3>
                             <div className="space-y-4">
-                                {wbs.flatMap(w => w.tasks || []).filter(t =>
-                                    ['blocked', 'delayed'].includes(t.status) ||
-                                    (t.due_date && new Date(t.due_date) < new Date() && t.status !== 'completed')
-                                ).map(task => (
+                                {wbs.flatMap(w => w.tasks || []).filter(t => t.is_overdue).map(task => (
                                     <div key={task.id} className="p-4 bg-red-50/50 border border-red-100 rounded-lg flex justify-between items-center">
                                         <div>
                                             <p className="font-semibold text-slate-800">{task.name}</p>
                                             <p className="text-xs text-red-500 font-medium">Due: {formatDate(task.due_date)}</p>
                                         </div>
-                                        <StatusBadge status={task.status || 'blocked'} />
+                                        <StatusBadge status={task.status} isOverdue={task.is_overdue} />
                                     </div>
                                 ))}
                             </div>
@@ -785,7 +788,7 @@ export default function ProjectWorkspace() {
                                                                         </td>
                                                                         <td className="px-6 py-4 text-center relative">
                                                                             <div className="flex items-center justify-center gap-2">
-                                                                                <StatusBadge status={task.status} />
+                                                                                <StatusBadge status={task.status} isOverdue={task.is_overdue} />
                                                                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                                                                                     <button
                                                                                         onClick={() => openEditTaskModal(task)}

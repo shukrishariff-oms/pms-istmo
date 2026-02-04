@@ -42,6 +42,7 @@ class TaskRead(BaseModel):
     planned_end: Optional[datetime] = None
     due_date: Optional[datetime] = None
     assignee: Optional[UserResponse] = None
+    is_overdue: bool = False
 
     class Config:
         from_attributes = True

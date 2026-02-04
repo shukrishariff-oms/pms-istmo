@@ -41,10 +41,18 @@ def get_portfolio_dashboard(db: Session = Depends(get_db)):
             
             # 1. Handle Overdue (Completed tasks are never overdue)
             is_overdue = False
-            if t_status != "completed" and t.due_date:
-                t_due = t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)
-                if t_due < now:
-                    is_overdue = True
+            if t_status != "completed":
+                # Check for Late Completion (Overdue)
+                if t.due_date:
+                    t_due = t.due_date.replace(tzinfo=timezone.utc) if t.due_date.tzinfo is None else t.due_date.astimezone(timezone.utc)
+                    if t_due < now:
+                        is_overdue = True
+                
+                # Check for Late Start (if still not started and passed start date)
+                if not is_overdue and t_status == "not_started" and t.planned_start:
+                    t_start = t.planned_start.replace(tzinfo=timezone.utc) if t.planned_start.tzinfo is None else t.planned_start.astimezone(timezone.utc)
+                    if t_start < now:
+                        is_overdue = True
 
             # 2. Categorize
             t_planned_end = t.planned_end.replace(tzinfo=timezone.utc) if t.planned_end and t.planned_end.tzinfo is None else (t.planned_end.astimezone(timezone.utc) if t.planned_end else None)
