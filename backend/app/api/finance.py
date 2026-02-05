@@ -381,10 +381,39 @@ async def update_budget_request(
     if req.status != models.RequestStatus.PENDING and current_user.role != models.UserRole.ADMIN:
         raise HTTPException(status_code=400, detail="Cannot edit processed request unless admin")
         
+    old_amount = req.amount
+    old_category = req.category
+    old_status = req.status
+    
     req.title = request_update.title
     req.amount = request_update.amount
     req.category = request_update.category
     req.justification = request_update.justification
     
+    # If the request was ALREADY approved, we need to sync the category pots
+    if old_status == models.RequestStatus.APPROVED:
+        # 1. Reverse old budget
+        old_cat = db.query(models.DepartmentBudget).filter(
+            models.DepartmentBudget.department_id == req.department_id,
+            models.DepartmentBudget.category == old_category
+        ).first()
+        if old_cat:
+            old_cat.amount -= old_amount
+            
+        # 2. Add new budget
+        new_cat = db.query(models.DepartmentBudget).filter(
+            models.DepartmentBudget.department_id == req.department_id,
+            models.DepartmentBudget.category = req.category
+        ).first()
+        if new_cat:
+            new_cat.amount += req.amount
+        else:
+            new_cat = models.DepartmentBudget(
+                department_id=req.department_id,
+                category=req.category,
+                amount=req.amount
+            )
+            db.add(new_cat)
+            
     db.commit()
     return req

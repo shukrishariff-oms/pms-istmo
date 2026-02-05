@@ -1,62 +1,63 @@
-import sqlite3
-import os
+from app.db.database import SessionLocal
+from app.models import sql_models
 
 def recalculate_budgets():
-    # Database path
-    db_path = os.path.join("storage", "pms.db")
-    if not os.path.exists(db_path):
-        db_path = os.path.join("backend", "storage", "pms.db")
-        if not os.path.exists(db_path):
-             print(f"Error: Database not found at {db_path}")
-             return
-
-    print(f"Connecting to database at: {db_path}")
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-
+    db = SessionLocal()
     try:
-        # 1. Reset all existing budget totals to 0
-        print("Resetting all category budgets to RM 0...")
-        cursor.execute("UPDATE department_budgets SET amount = 0.0")
+        print("Starting Budget Pot Recalculation...")
         
-        # 2. Get all approved budget requests
-        print("Calculating totals from approved budget requests...")
-        cursor.execute("SELECT department_id, category, SUM(amount) FROM budget_requests WHERE status = 'approved' GROUP BY department_id, category")
-        approved_sums = cursor.fetchall()
-
-        if not approved_sums:
-            print("No approved budget requests found. All budgets remain RM 0.")
-        else:
-            for dept_id, category, total_amount in approved_sums:
-                print(f" - Dept {dept_id} | Category: '{category}' | Total: RM {total_amount}")
+        # 1. Get all departments
+        departments = db.query(sql_models.Department).all()
+        
+        for dept in departments:
+            print(f"Recalculating for Department: {dept.code}")
+            
+            # 2. Get all APPROVED budget requests for this department
+            all_requests = db.query(sql_models.BudgetRequest).filter(
+                sql_models.BudgetRequest.department_id == dept.id
+            ).all()
+            print(f"  Found {len(all_requests)} total requests for {dept.code}")
+            for r in all_requests:
+                print(f"    - ID: {r.id}, Title: {r.title}, Category: {r.category}, Status: {r.status}, Amount: {r.amount}")
                 
-                # Update or Insert into department_budgets
-                cursor.execute(
-                    "SELECT id FROM department_budgets WHERE department_id = ? AND category = ?", 
-                    (dept_id, category)
-                )
-                existing = cursor.fetchone()
+            approved_requests = [r for r in all_requests if r.status.lower() == "approved"]
+            
+            # 3. Aggregate by category
+            category_totals = {}
+            for req in approved_requests:
+                category_totals[req.category] = category_totals.get(req.category, 0.0) + req.amount
                 
-                if existing:
-                    cursor.execute(
-                        "UPDATE department_budgets SET amount = ? WHERE id = ?",
-                        (total_amount, existing[0])
-                    )
+            # 4. Update or Create DepartmentBudget entries
+            # First, zero out existing budgets for this dept to ensure accuracy
+            db.query(sql_models.DepartmentBudget).filter(
+                sql_models.DepartmentBudget.department_id == dept.id
+            ).update({"amount": 0.0})
+            
+            for category, total in category_totals.items():
+                budget_entry = db.query(sql_models.DepartmentBudget).filter(
+                    sql_models.DepartmentBudget.department_id == dept.id,
+                    sql_models.DepartmentBudget.category == category
+                ).first()
+                
+                if budget_entry:
+                    budget_entry.amount = total
+                    print(f"  - Updated {category}: RM {total}")
                 else:
-                    cursor.execute(
-                        "INSERT INTO department_budgets (department_id, category, amount, year) VALUES (?, ?, ?, 2024)",
-                        (dept_id, category, total_amount)
+                    new_budget = sql_models.DepartmentBudget(
+                        department_id=dept.id,
+                        category=category,
+                        amount=total
                     )
-
-        conn.commit()
-        print("\nRecalculation successful! Source of truth (Budget Requests) is now synced.")
-        print("Sila 'Refresh' dashboard anda sekarang. 😊🚀🐢")
-
+                    db.add(new_budget)
+                    print(f"  - Created {category}: RM {total}")
+            
+        db.commit()
+        print("Budget recalculation completed successfully.")
     except Exception as e:
-        print(f"An error occurred: {e}")
-        conn.rollback()
+        print(f"Error during recalculation: {e}")
+        db.rollback()
     finally:
-        conn.close()
+        db.close()
 
 if __name__ == "__main__":
     recalculate_budgets()
