@@ -401,8 +401,8 @@ export default function DocumentController() {
                         </div>
 
                         {/* Form Side */}
-                        <div className="w-2/3 p-6">
-                            <h3 className="text-lg font-bold text-slate-900 mb-4">Transfer / Update Document</h3>
+                        <div className="w-2/3 p-6 overflow-y-auto max-h-[80vh]">
+                            <h3 className="text-lg font-bold text-slate-900 mb-4">Transfer / Handover Document</h3>
                             <div className="space-y-4">
                                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 space-y-3">
                                     <div className="flex justify-between items-center">
@@ -474,7 +474,7 @@ export default function DocumentController() {
 
                                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                                     <h4 className="text-xs font-bold text-slate-900 uppercase mb-3 flex items-center gap-2">
-                                        <Edit2 size={12} /> Receiver Proof of Handover (Optional)
+                                        <Edit2 size={12} /> Receiver Proof of Receipt
                                     </h4>
 
                                     <div className="space-y-4">
