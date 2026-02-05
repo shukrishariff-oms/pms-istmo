@@ -59,7 +59,7 @@ export default function NotesPage() {
     const [selectedUserIds, setSelectedUserIds] = useState([]);
 
     useEffect(() => {
-        const userId = localStorage.getItem('userId');
+        const userId = localStorage.getItem('user_id');
         setCurrentUser(userId ? parseInt(userId) : null);
         loadNotes();
         loadUsers();
