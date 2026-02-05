@@ -272,11 +272,41 @@ export default function FinanceDashboard() {
     const totalCapexBudget = projects.reduce((sum, p) => sum + (p.budget_capex || 0), 0);
     const totalCapexSpent = projects.reduce((sum, p) => sum + (p.actual_capex || 0), 0);
 
-    // Filter Ledger for OPEX
-    const allLedgerItems = (deptStats?.requests || deptStats?.expenses) ? [
-        ...(deptStats.requests || []).filter(r => r.status === 'approved').map(r => ({ ...r, type: 'credit', date: r.created_at || new Date().toISOString() })),
-        ...(deptStats.expenses || []).map(e => ({ ...e, type: 'debit', date: e.date || new Date().toISOString() }))
-    ].sort((a, b) => new Date(a.date) - new Date(b.date)) : [];
+    // --- Ledger Logic ---
+    // Calculate Baseline injections for categories where budget card > ledger items
+    const baselineItems = [];
+    (deptStats?.category_budgets || []).forEach(catBudget => {
+        const catName = catBudget.category || "Uncategorized";
+        const totalBudget = catBudget.amount || 0;
+        const ledgerSum = (deptStats.requests || [])
+            .filter(r => r.status === 'approved' && (r.category || "Uncategorized") === catName)
+            .reduce((sum, r) => sum + (r.amount || 0), 0);
+
+        if (totalBudget > ledgerSum) {
+            baselineItems.push({
+                id: `baseline-${catName}`,
+                title: `Baseline Allocation (${catName})`,
+                amount: totalBudget - ledgerSum,
+                category: catName,
+                type: 'credit',
+                date: '2025-01-01T00:00:00Z', // Use early date to ensure it's first
+                isBaseline: true
+            });
+        }
+    });
+
+    const allLedgerItems = [
+        ...baselineItems,
+        ...(deptStats.requests || []).filter(r => r.status === 'approved').map(r => ({ ...r, type: 'credit', date: r.created_at || new Date().toISOString(), originalData: r })),
+        ...(deptStats.expenses || []).map(e => ({ ...e, type: 'debit', date: e.date || new Date().toISOString(), originalData: e }))
+    ].sort((a, b) => {
+        const dateDiff = new Date(a.date) - new Date(b.date);
+        if (dateDiff !== 0) return dateDiff;
+        // If same date, budgets (credit) come before expenses (debit)
+        if (a.type === 'credit' && b.type === 'debit') return -1;
+        if (a.type === 'debit' && b.type === 'credit') return 1;
+        return 0;
+    });
 
     // Derive Flat Categories from settings
     const flatCategories = Array.isArray(categories) ? categories.reduce((acc, cat) => {
@@ -576,9 +606,10 @@ export default function FinanceDashboard() {
                                             <td className="px-6 py-3 text-slate-500 max-w-[100px] truncate">{formatDate(item.date)}</td>
                                             <td className="px-6 py-3">
                                                 <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                                                    item.type === 'credit' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                                                    item.isBaseline ? "bg-slate-100 text-slate-600" :
+                                                        (item.type === 'credit' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700")
                                                 )}>
-                                                    {item.type === 'credit' ? 'Budget' : 'Expense'}
+                                                    {item.isBaseline ? 'Baseline' : (item.type === 'credit' ? 'Budget' : 'Expense')}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-3 font-medium text-slate-900">{item.title}</td>
@@ -594,22 +625,24 @@ export default function FinanceDashboard() {
                                             </td>
                                             {['admin', 'hod'].includes(role.toLowerCase()) && (
                                                 <td className="px-4 py-3 text-center">
-                                                    <div className="flex justify-center gap-1">
-                                                        <button
-                                                            onClick={() => item.originalData ? (item.type === 'debit' ? handleEditExpense(item.originalData) : handleEditRequest(item.originalData)) : alert("Editing not available for this item type")}
-                                                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                            title="Edit"
-                                                        >
-                                                            <Pencil size={14} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => item.type === 'debit' ? handleDeleteExpense(item.id) : handleDeleteRequest(item.id)}
-                                                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                            title="Delete"
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    </div>
+                                                    {!item.isBaseline && (
+                                                        <div className="flex justify-center gap-1">
+                                                            <button
+                                                                onClick={() => item.originalData ? (item.type === 'debit' ? handleEditExpense(item.originalData) : handleEditRequest(item.originalData)) : alert("Editing not available for this item type")}
+                                                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                title="Edit"
+                                                            >
+                                                                <Pencil size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => item.type === 'debit' ? handleDeleteExpense(item.id) : handleDeleteRequest(item.id)}
+                                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                title="Delete"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </td>
                                             )}
                                         </tr>
