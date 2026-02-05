@@ -295,17 +295,38 @@ export default function FinanceDashboard() {
         }
     });
 
-    const allLedgerItems = [
+    const allSortedLedger = [
         ...baselineItems,
         ...(deptStats.requests || []).filter(r => r.status === 'approved').map(r => ({ ...r, type: 'credit', date: r.created_at || new Date().toISOString(), originalData: r })),
         ...(deptStats.expenses || []).map(e => ({ ...e, type: 'debit', date: e.date || new Date().toISOString(), originalData: e }))
     ].sort((a, b) => {
-        const dateDiff = new Date(a.date) - new Date(b.date);
-        if (dateDiff !== 0) return dateDiff;
-        // If same date, budgets (credit) come before expenses (debit)
+        // Compare dates (YYYY-MM-DD only to help grouping credits of the same day)
+        const dateA = new Date(a.date).toISOString().split('T')[0];
+        const dateB = new Date(b.date).toISOString().split('T')[0];
+
+        if (dateA !== dateB) return new Date(a.date) - new Date(b.date);
+
+        // Same day: Force Credits (Budgets/Baselines) to appear BEFORE Debits (Expenses)
         if (a.type === 'credit' && b.type === 'debit') return -1;
         if (a.type === 'debit' && b.type === 'credit') return 1;
-        return 0;
+
+        // If same type and date, use original timestamp/id sorting
+        return new Date(a.date) - new Date(b.date);
+    });
+
+    // Calculate Running Balances (TRACKED PER CATEGORY)
+    // This ensures a row's balance is identical whether viewed in 'All' or a specific category.
+    const potBalances = {};
+    const ledgerWithBalance = allSortedLedger.map(item => {
+        const cat = item.category || "Uncategorized";
+        const amount = parseFloat(item.amount) || 0;
+
+        if (potBalances[cat] === undefined) potBalances[cat] = 0;
+
+        if (item.type === 'credit') potBalances[cat] += amount;
+        else potBalances[cat] -= amount;
+
+        return { ...item, amount, runningBalance: potBalances[cat] };
     });
 
     // Derive Flat Categories from settings
@@ -334,17 +355,8 @@ export default function FinanceDashboard() {
 
     // Filter Ledger by Category
     const filteredLedger = opexCategoryFilter === 'All'
-        ? allLedgerItems
-        : allLedgerItems.filter(item => (item.category || "Uncategorized") === opexCategoryFilter);
-
-    // Calculate Running Balance
-    let runningBalance = 0;
-    const ledgerWithBalance = filteredLedger.map(item => {
-        const amount = parseFloat(item.amount) || 0;
-        if (item.type === 'credit') runningBalance += amount;
-        else runningBalance -= amount;
-        return { ...item, amount, runningBalance };
-    });
+        ? ledgerWithBalance
+        : ledgerWithBalance.filter(item => (item.category || "Uncategorized") === opexCategoryFilter);
 
     return (
         <div className="space-y-6">
