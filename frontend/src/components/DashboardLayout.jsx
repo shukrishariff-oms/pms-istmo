@@ -208,13 +208,22 @@ function NotificationBell() {
         const fetchReminders = async () => {
             try {
                 const notes = await noteService.getNotes();
+                if (!Array.isArray(notes)) return;
+
                 const now = new Date();
                 // Show reminders due within 24 hours
                 const dueReminders = notes.filter(n =>
+                    n &&
                     !n.is_completed &&
                     n.reminder_date &&
+                    new Date(n.reminder_date).toString() !== 'Invalid Date' &&
                     new Date(n.reminder_date) <= new Date(now.getTime() + 24 * 60 * 60 * 1000)
-                ).sort((a, b) => new Date(a.reminder_date) - new Date(b.reminder_date));
+                ).sort((a, b) => {
+                    const dateA = new Date(a.reminder_date);
+                    const dateB = new Date(b.reminder_date);
+                    return (dateA && dateB) ? dateA - dateB : 0;
+                });
+
                 setNotifications(dueReminders);
             } catch (err) {
                 console.error("Failed to fetch reminders for notifications", err);
@@ -226,7 +235,7 @@ function NotificationBell() {
         return () => clearInterval(interval);
     }, []);
 
-    const unreadCount = notifications.filter(n => new Date(n.reminder_date) <= new Date()).length;
+    const unreadCount = notifications.length;
 
     return (
         <div className="relative">
@@ -262,7 +271,11 @@ function NotificationBell() {
                                 </div>
                             ) : (
                                 notifications.map(note => {
-                                    const isDue = new Date(note.reminder_date) <= new Date();
+                                    if (!note) return null;
+                                    const noteDate = new Date(note.reminder_date);
+                                    if (noteDate.toString() === 'Invalid Date') return null;
+
+                                    const isDue = noteDate <= new Date();
                                     return (
                                         <div
                                             key={note.id}
@@ -284,17 +297,17 @@ function NotificationBell() {
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="text-sm font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
-                                                        {note.title}
+                                                        {note.title || "Untitled Note"}
                                                     </p>
                                                     <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">
-                                                        {note.content}
+                                                        {note.content || "No content"}
                                                     </p>
                                                     <div className={cn(
                                                         "flex items-center gap-1.5 mt-2 text-[10px] font-black uppercase tracking-widest",
                                                         isDue ? "text-red-500" : "text-slate-400"
                                                     )}>
                                                         <Clock size={10} />
-                                                        {new Date(note.reminder_date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                                        {noteDate.toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
                                                     </div>
                                                 </div>
                                             </div>
