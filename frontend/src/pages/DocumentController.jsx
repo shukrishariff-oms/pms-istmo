@@ -372,7 +372,7 @@ export default function DocumentController() {
                                                     <div className="mt-1">
                                                         <p className="text-[10px] text-indigo-600 font-bold flex items-center gap-1">
                                                             <CheckCircle2 size={10} />
-                                                            <span>Signed by {log.signer_name || 'Unknown'}:</span> {new Date(log.signed_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+                                                            <span>Received by {log.signer_name || 'Unknown'}:</span> {new Date(log.signed_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
                                                         </p>
                                                         {log.signature_image && (
                                                             <div className="mt-1 bg-white p-1 rounded border border-slate-200 inline-block">
