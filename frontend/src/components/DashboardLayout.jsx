@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import * as noteService from '../services/noteService';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -172,6 +173,7 @@ export default function DashboardLayout({ children }) {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        <NotificationBell />
                         <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
                             <div className="text-right hidden sm:block">
                                 <p className="text-sm font-bold text-slate-900 capitalize">{fullName}</p>
@@ -189,6 +191,123 @@ export default function DashboardLayout({ children }) {
                     {children}
                 </main>
             </div>
+        </div>
+    );
+}
+
+function NotificationBell() {
+    const [notifications, setNotifications] = useState([]);
+    const [isOpen, setIsOpen] = useState(false);
+
+    useEffect(() => {
+        const fetchReminders = async () => {
+            try {
+                const notes = await noteService.getNotes();
+                const now = new Date();
+                // Show reminders due within 24 hours
+                const dueReminders = notes.filter(n =>
+                    n.reminder_date &&
+                    new Date(n.reminder_date) <= new Date(now.getTime() + 24 * 60 * 60 * 1000)
+                ).sort((a, b) => new Date(a.reminder_date) - new Date(b.reminder_date));
+                setNotifications(dueReminders);
+            } catch (err) {
+                console.error("Failed to fetch reminders for notifications", err);
+            }
+        };
+
+        fetchReminders();
+        const interval = setInterval(fetchReminders, 60000); // Check every minute
+        return () => clearInterval(interval);
+    }, []);
+
+    const unreadCount = notifications.filter(n => new Date(n.reminder_date) <= new Date()).length;
+
+    return (
+        <div className="relative">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all relative group"
+            >
+                <Bell size={20} className={cn(unreadCount > 0 && "animate-bounce text-blue-600")} />
+                {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center ring-2 ring-white animate-in zoom-in">
+                        {unreadCount}
+                    </span>
+                )}
+            </button>
+
+            {isOpen && (
+                <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+                    <div className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 z-50 overflow-hidden animate-in slide-in-from-top-2">
+                        <div className="p-4 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                            <h3 className="font-black text-slate-900 text-sm uppercase tracking-tight">Reminders</h3>
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-600 text-[10px] font-bold rounded-full">
+                                {notifications.length} Total
+                            </span>
+                        </div>
+                        <div className="max-h-96 overflow-y-auto">
+                            {notifications.length === 0 ? (
+                                <div className="p-8 text-center">
+                                    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <Bell size={20} className="text-slate-300" />
+                                    </div>
+                                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">No reminders soon</p>
+                                </div>
+                            ) : (
+                                notifications.map(note => {
+                                    const isDue = new Date(note.reminder_date) <= new Date();
+                                    return (
+                                        <div
+                                            key={note.id}
+                                            className={cn(
+                                                "p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer group",
+                                                isDue && "bg-red-50/30"
+                                            )}
+                                            onClick={() => {
+                                                setIsOpen(false);
+                                                window.location.href = '/notes';
+                                            }}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className={cn(
+                                                    "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                                                    isDue ? "bg-red-100 text-red-600" : "bg-blue-100 text-blue-600"
+                                                )}>
+                                                    <StickyNote size={14} />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors">
+                                                        {note.title}
+                                                    </p>
+                                                    <p className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">
+                                                        {note.content}
+                                                    </p>
+                                                    <div className={cn(
+                                                        "flex items-center gap-1.5 mt-2 text-[10px] font-black uppercase tracking-widest",
+                                                        isDue ? "text-red-500" : "text-slate-400"
+                                                    )}>
+                                                        <Clock size={10} />
+                                                        {new Date(note.reminder_date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                        <div className="p-3 bg-slate-50 border-t border-slate-100 text-center">
+                            <button
+                                onClick={() => { setIsOpen(false); window.location.href = '/notes'; }}
+                                className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700 active:scale-95 transition-all"
+                            >
+                                View All Notes
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }

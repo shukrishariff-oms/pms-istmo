@@ -8,6 +8,7 @@ class NoteBase(BaseModel):
     content: str
     color: Optional[str] = "#ffffff"
     is_pinned: Optional[bool] = False
+    reminder_date: Optional[datetime] = None
 
 class NoteCreate(NoteBase):
     pass
@@ -17,6 +18,7 @@ class NoteUpdate(BaseModel):
     content: Optional[str] = None
     color: Optional[str] = None
     is_pinned: Optional[bool] = None
+    reminder_date: Optional[datetime] = None
 
 class Note(NoteBase):
     id: int

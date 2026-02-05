@@ -12,8 +12,9 @@ import {
     Copy,
     Check,
     Palette,
-    Share2,
-    MoreVertical
+    Bell,
+    Calendar,
+    AlertCircle
 } from 'lucide-react';
 import * as noteService from '../services/noteService';
 import clsx from 'clsx';
@@ -34,7 +35,13 @@ export default function NotesPage() {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [currentNote, setCurrentNote] = useState({ title: '', content: '', color: '#ffffff', is_pinned: false });
+    const [currentNote, setCurrentNote] = useState({
+        title: '',
+        content: '',
+        color: '#ffffff',
+        is_pinned: false,
+        reminder_date: ''
+    });
     const [editingId, setEditingId] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
 
@@ -46,7 +53,6 @@ export default function NotesPage() {
         setLoading(true);
         try {
             const data = await noteService.getNotes();
-            // Sort by pinned first, then by date
             const sortedData = data.sort((a, b) => {
                 if (a.is_pinned === b.is_pinned) {
                     return new Date(b.created_at) - new Date(a.created_at);
@@ -64,18 +70,27 @@ export default function NotesPage() {
     const handleSave = async (e) => {
         e.preventDefault();
         try {
+            const noteToSave = {
+                ...currentNote,
+                reminder_date: currentNote.reminder_date || null
+            };
+
             if (editingId) {
-                await noteService.updateNote(editingId, currentNote);
+                await noteService.updateNote(editingId, noteToSave);
             } else {
-                await noteService.createNote(currentNote);
+                await noteService.createNote(noteToSave);
             }
             setIsModalOpen(false);
-            setCurrentNote({ title: '', content: '', color: '#ffffff', is_pinned: false });
-            setEditingId(null);
+            resetForm();
             loadNotes();
         } catch (err) {
             console.error("Failed to save note", err);
         }
+    };
+
+    const resetForm = () => {
+        setCurrentNote({ title: '', content: '', color: '#ffffff', is_pinned: false, reminder_date: '' });
+        setEditingId(null);
     };
 
     const handleDelete = async (id) => {
@@ -108,7 +123,8 @@ export default function NotesPage() {
             title: note.title,
             content: note.content,
             color: note.color || '#ffffff',
-            is_pinned: note.is_pinned || false
+            is_pinned: note.is_pinned || false,
+            reminder_date: note.reminder_date ? new Date(note.reminder_date).toISOString().slice(0, 16) : ''
         });
         setEditingId(note.id);
         setIsModalOpen(true);
@@ -124,6 +140,7 @@ export default function NotesPage() {
 
     const NoteCard = ({ note }) => {
         const colorOption = COLORS.find(c => c.hex === note.color) || COLORS[0];
+        const isReminderDue = note.reminder_date && new Date(note.reminder_date) < new Date();
 
         return (
             <div
@@ -134,7 +151,6 @@ export default function NotesPage() {
                     note.is_pinned ? "ring-2 ring-blue-500/20 shadow-md" : "shadow-sm"
                 )}
             >
-                {/* Visual Accent */}
                 <div className={clsx("h-1.5 w-full", note.is_pinned ? "bg-blue-500" : "bg-transparent")} />
 
                 <div className="p-5">
@@ -149,29 +165,16 @@ export default function NotesPage() {
                                     "p-1.5 rounded-lg transition-colors",
                                     note.is_pinned ? "text-blue-600 bg-blue-100" : "text-slate-400 hover:text-blue-600 hover:bg-blue-50"
                                 )}
-                                title={note.is_pinned ? "Unpin" : "Pin"}
                             >
                                 {note.is_pinned ? <PinOff size={16} /> : <Pin size={16} />}
                             </button>
-                            <button
-                                onClick={() => copyToClipboard(note)}
-                                className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                                title="Copy"
-                            >
+                            <button onClick={() => copyToClipboard(note)} className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
                                 {copiedId === note.id ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
                             </button>
-                            <button
-                                onClick={() => openEdit(note)}
-                                className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                                title="Edit"
-                            >
+                            <button onClick={() => openEdit(note)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
                                 <Edit3 size={16} />
                             </button>
-                            <button
-                                onClick={() => handleDelete(note.id)}
-                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Delete"
-                            >
+                            <button onClick={() => handleDelete(note.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                                 <Trash2 size={16} />
                             </button>
                         </div>
@@ -180,6 +183,20 @@ export default function NotesPage() {
                     <p className="text-slate-700 text-sm whitespace-pre-wrap leading-relaxed mb-4">
                         {note.content}
                     </p>
+
+                    {note.reminder_date && (
+                        <div className={clsx(
+                            "mb-4 py-2 px-3 rounded-xl flex items-center gap-2 text-xs font-bold",
+                            isReminderDue ? "bg-red-100 text-red-600 animate-pulse" : "bg-blue-100/50 text-blue-600"
+                        )}>
+                            <Bell size={14} className={isReminderDue ? "fill-red-600" : ""} />
+                            <span>
+                                {isReminderDue ? "Due: " : "Reminder: "}
+                                {new Date(note.reminder_date).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}
+                            </span>
+                            {isReminderDue && <AlertCircle size={14} />}
+                        </div>
+                    )}
 
                     <div className="flex items-center justify-between pt-3 border-t border-black/5">
                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
@@ -198,12 +215,6 @@ export default function NotesPage() {
                         )}
                     </div>
                 </div>
-
-                {note.is_pinned && (
-                    <div className="absolute top-0 right-0 p-1">
-                        <Pin size={12} className="text-blue-500 fill-blue-500 rotate-45" />
-                    </div>
-                )}
             </div>
         );
     };
@@ -234,8 +245,7 @@ export default function NotesPage() {
                     </div>
                     <button
                         onClick={() => {
-                            setEditingId(null);
-                            setCurrentNote({ title: '', content: '', color: '#ffffff', is_pinned: false });
+                            resetForm();
                             setIsModalOpen(true);
                         }}
                         className="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/30 hover:shadow-blue-600/40 active:scale-95 flex items-center gap-2 text-sm uppercase tracking-wider"
@@ -256,7 +266,6 @@ export default function NotesPage() {
                 </div>
             ) : (
                 <div className="space-y-10">
-                    {/* Pinned Section */}
                     {pinnedNotes.length > 0 && (
                         <section className="space-y-4">
                             <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 ml-1">
@@ -269,13 +278,8 @@ export default function NotesPage() {
                         </section>
                     )}
 
-                    {/* All Notes Section */}
                     <section className="space-y-4">
-                        {pinnedNotes.length > 0 && (
-                            <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">
-                                Recent Notes
-                            </h2>
-                        )}
+                        {pinnedNotes.length > 0 && <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Recent Notes</h2>}
                         <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
                             {otherNotes.map(note => <NoteCard key={note.id} note={note} />)}
                         </div>
@@ -293,11 +297,9 @@ export default function NotesPage() {
                 </div>
             )}
 
-            {/* Enhanced Note Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
                     <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 flex flex-col max-h-[90vh]">
-                        {/* Modal Header */}
                         <div className="flex items-center justify-between px-8 py-6 bg-slate-50/50 border-b border-slate-100">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
@@ -307,15 +309,11 @@ export default function NotesPage() {
                                     {editingId ? 'Edit Your Note' : 'Capture New Idea'}
                                 </h2>
                             </div>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="p-2.5 hover:bg-slate-200 rounded-xl transition-all active:scale-90"
-                            >
+                            <button onClick={() => setIsModalOpen(false)} className="p-2.5 hover:bg-slate-200 rounded-xl transition-all active:scale-90">
                                 <X size={20} className="text-slate-400" />
                             </button>
                         </div>
 
-                        {/* Modal Body */}
                         <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-8 space-y-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Note Title</label>
@@ -333,7 +331,7 @@ export default function NotesPage() {
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Note Content</label>
                                 <textarea
                                     required
-                                    rows={8}
+                                    rows={6}
                                     className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-slate-700 resize-none font-medium placeholder:text-slate-300 leading-relaxed"
                                     placeholder="Spill your brilliant thoughts here..."
                                     value={currentNote.content}
@@ -341,37 +339,43 @@ export default function NotesPage() {
                                 />
                             </div>
 
-                            {/* Color Picker Component */}
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-2 ml-1">
-                                    <Palette size={14} className="text-slate-400" />
-                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Theme Color</label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2 ml-1">
+                                        <Palette size={14} className="text-slate-400" />
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Theme Color</label>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {COLORS.map(color => (
+                                            <button
+                                                key={color.hex}
+                                                type="button"
+                                                onClick={() => setCurrentNote({ ...currentNote, color: color.hex })}
+                                                className={clsx(
+                                                    "w-8 h-8 rounded-lg border-2 transition-all",
+                                                    currentNote.color === color.hex ? "border-blue-500 scale-110 shadow-lg" : "border-transparent"
+                                                )}
+                                                style={{ backgroundColor: color.hex }}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
-                                <div className="flex flex-wrap gap-3">
-                                    {COLORS.map(color => (
-                                        <button
-                                            key={color.hex}
-                                            type="button"
-                                            onClick={() => setCurrentNote({ ...currentNote, color: color.hex })}
-                                            className={clsx(
-                                                "w-10 h-10 rounded-xl border-2 transition-all p-1",
-                                                currentNote.color === color.hex ? "border-blue-500 scale-110 shadow-lg" : "border-transparent"
-                                            )}
-                                            style={{ backgroundColor: color.hex }}
-                                            title={color.name}
-                                        >
-                                            {currentNote.color === color.hex && (
-                                                <div className="w-full h-full flex items-center justify-center">
-                                                    <Check size={16} className="text-slate-900" />
-                                                </div>
-                                            )}
-                                        </button>
-                                    ))}
+
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2 ml-1">
+                                        <Calendar size={14} className="text-slate-400" />
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Set Reminder</label>
+                                    </div>
+                                    <input
+                                        type="datetime-local"
+                                        className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold text-slate-900 text-sm"
+                                        value={currentNote.reminder_date}
+                                        onChange={(e) => setCurrentNote({ ...currentNote, reminder_date: e.target.value })}
+                                    />
                                 </div>
                             </div>
                         </form>
 
-                        {/* Modal Footer */}
                         <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-4">
                             <button
                                 type="button"
@@ -393,11 +397,7 @@ export default function NotesPage() {
                 </div>
             )}
 
-            <style>{`
-                .break-inside-avoid {
-                    break-inside: avoid;
-                }
-            `}</style>
+            <style>{`.break-inside-avoid { break-inside: avoid; }`}</style>
         </div>
     );
 }

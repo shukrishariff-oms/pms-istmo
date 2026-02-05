@@ -41,6 +41,10 @@ def migrate_notes():
             print("Adding is_pinned column to notes table...")
             cursor.execute("ALTER TABLE notes ADD COLUMN is_pinned BOOLEAN DEFAULT 0")
 
+        if "reminder_date" not in columns:
+            print("Adding reminder_date column to notes table...")
+            cursor.execute("ALTER TABLE notes ADD COLUMN reminder_date DATETIME")
+
         conn.commit()
         print("Notes migration successful.")
     except Exception as e:
