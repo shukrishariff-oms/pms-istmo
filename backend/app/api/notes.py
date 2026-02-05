@@ -22,6 +22,8 @@ def create_note(
     db_note = sql_models.Note(
         title=note.title,
         content=note.content,
+        color=note.color,
+        is_pinned=note.is_pinned,
         author_id=current_user.id
     )
     db.add(db_note)

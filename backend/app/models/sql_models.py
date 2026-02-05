@@ -268,6 +268,8 @@ class Note(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
     content = Column(Text)
+    color = Column(String, default="#ffffff") # Hex color for the note
+    is_pinned = Column(Boolean, default=False)
     
     author_id = Column(Integer, ForeignKey("users.id"))
     author = relationship("User")
