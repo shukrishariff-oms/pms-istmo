@@ -133,6 +133,9 @@ class TaskUpdate(BaseModel):
 
 # --- Payment Schemas ---
 
+# Alias for backward compatibility or migration
+ProjectResponse = ProjectRead
+
 class PaymentCreate(BaseModel):
     title: str
     vendor_name: str

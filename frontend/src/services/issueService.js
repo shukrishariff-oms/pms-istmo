@@ -1,3 +1,4 @@
+// Standardizing to native fetch API for optimized builds
 const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000/issues" : "/issues";
 
 const getHeaders = () => {
