@@ -403,7 +403,7 @@ async def update_budget_request(
         # 2. Add new budget
         new_cat = db.query(models.DepartmentBudget).filter(
             models.DepartmentBudget.department_id == req.department_id,
-            models.DepartmentBudget.category = req.category
+            models.DepartmentBudget.category == req.category
         ).first()
         if new_cat:
             new_cat.amount += req.amount
