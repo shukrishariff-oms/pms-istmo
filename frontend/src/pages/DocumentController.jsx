@@ -393,7 +393,7 @@ export default function DocumentController() {
                                                         <span>Transferred:</span> {new Date(nextLog.timestamp).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
                                                     </p>
                                                 )}
-                                                {!log.signed_at && !nextLog && (
+                                                {log.status !== 'signed' && !nextLog && (
                                                     <p className="text-[10px] text-amber-600 font-bold italic mt-1 animate-bounce">
                                                         ⚡ Pending Signature...
                                                     </p>

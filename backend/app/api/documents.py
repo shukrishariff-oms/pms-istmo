@@ -184,6 +184,8 @@ async def update_document(
                 latest_log.signer_name = doc_update.signer_name
             if doc_update.signature_image:
                 latest_log.signature_image = doc_update.signature_image
+                if not latest_log.signed_at:
+                    latest_log.signed_at = datetime.now()
     else:
         # TRANSFERRING TO NEW HOLDER (Handoff or Reroute)
         if doc_update.is_correction and latest_log:
