@@ -10,6 +10,30 @@ from .auth import get_current_user
 
 router = APIRouter()
 
+# --- Auto-Migration for Schema Updates ---
+# This ensures that if the code is deployed to a container with an old DB, it updates itself.
+from ..db.database import engine
+from sqlalchemy import text
+
+try:
+    with engine.connect() as conn:
+        # Check and add signer_name
+        try:
+            conn.execute(text("ALTER TABLE document_logs ADD COLUMN signer_name TEXT"))
+            conn.commit()
+        except Exception:
+            pass # Column likely exists or other error (ignored to prevent crash)
+
+        # Check and add signature_image
+        try:
+            conn.execute(text("ALTER TABLE document_logs ADD COLUMN signature_image TEXT"))
+            conn.commit()
+        except Exception:
+            pass # Column likely exists
+except Exception as e:
+    print(f"Auto-migration warning: {e}")
+
+
 # --- Schemas ---
 
 class DocumentCreate(BaseModel):
