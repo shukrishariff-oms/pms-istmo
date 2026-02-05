@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
-from .project_schemas import UserResponse, ProjectResponse
+from .project_schemas import UserResponse, ProjectRead
 
 class IssueBase(BaseModel):
     title: str
@@ -33,7 +33,7 @@ class Issue(IssueBase):
     # Optional nested responses
     reporter: Optional[UserResponse] = None
     assignee: Optional[UserResponse] = None
-    project: Optional[ProjectResponse] = None
+    project: Optional[ProjectRead] = None
 
     class Config:
         from_attributes = True
