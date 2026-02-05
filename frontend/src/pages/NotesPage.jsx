@@ -250,17 +250,20 @@ export default function NotesPage() {
                             <button onClick={() => copyToClipboard(note)} className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
                                 {copiedId === note.id ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
                             </button>
-                            <button onClick={() => openEdit(note)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
-                                <Edit3 size={16} />
-                            </button>
+
                             {note.author_id === currentUser && (
-                                <button onClick={() => openShare(note)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                    <Share2 size={16} />
-                                </button>
+                                <>
+                                    <button onClick={() => openEdit(note)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                                        <Edit3 size={16} />
+                                    </button>
+                                    <button onClick={() => openShare(note)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                        <Share2 size={16} />
+                                    </button>
+                                    <button onClick={() => handleDelete(note.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                        <Trash2 size={16} />
+                                    </button>
+                                </>
                             )}
-                            <button onClick={() => handleDelete(note.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                                <Trash2 size={16} />
-                            </button>
                         </div>
                     </div>
 
