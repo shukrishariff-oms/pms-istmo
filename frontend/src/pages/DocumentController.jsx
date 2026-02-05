@@ -495,7 +495,12 @@ export default function DocumentController() {
                                                     <SignatureCanvas
                                                         ref={sigPad}
                                                         penColor='black'
-                                                        canvasProps={{ width: 450, height: 150, className: 'sigCanvas' }}
+                                                        canvasProps={{
+                                                            width: 450,
+                                                            height: 150,
+                                                            className: 'sigCanvas',
+                                                            style: { touchAction: 'none' }
+                                                        }}
                                                     />
                                                 </div>
                                                 <button
