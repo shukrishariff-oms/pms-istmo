@@ -261,6 +261,8 @@ class DocumentLog(Base):
     
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
     signed_at = Column(DateTime(timezone=True), nullable=True)
+    signer_name = Column(String, nullable=True)
+    signature_image = Column(Text, nullable=True) # Base64 string
     
     document = relationship("DocumentTracker", back_populates="logs")
 

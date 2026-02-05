@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import SignatureCanvas from 'react-signature-canvas';
 import { getDocuments, createDocument, updateDocument, deleteDocument } from '../services/documents';
 import { getProjects } from '../services/projects';
 import {
@@ -45,6 +46,8 @@ export default function DocumentController() {
     const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
     const [isCorrection, setIsCorrection] = useState(false);
     const [selectedDoc, setSelectedDoc] = useState(null);
+    const [signerName, setSignerName] = useState('');
+    const sigPad = useRef({});
 
     const [newDoc, setNewDoc] = useState({
         title: '',
@@ -100,11 +103,15 @@ export default function DocumentController() {
                 current_holder: selectedDoc.current_holder,
                 status: selectedDoc.status,
                 description: selectedDoc.description,
-                is_correction: isCorrection
+                is_correction: isCorrection,
+                signer_name: signerName,
+                signature_image: sigPad.current?.toDataURL && !sigPad.current.isEmpty() ? sigPad.current.toDataURL() : null
             });
+
             setIsUpdateModalOpen(false);
             setSelectedDoc(null);
             setIsCorrection(false);
+            setSignerName('');
             loadData();
         } catch (err) {
             console.error("Update Document Error:", err);
@@ -362,10 +369,17 @@ export default function DocumentController() {
                                                     <span className="font-medium">Received:</span> {new Date(log.timestamp).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
                                                 </p>
                                                 {log.signed_at && (
-                                                    <p className="text-[10px] text-indigo-600 font-bold flex items-center gap-1">
-                                                        <CheckCircle2 size={10} />
-                                                        <span>Signed:</span> {new Date(log.signed_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
-                                                    </p>
+                                                    <div className="mt-1">
+                                                        <p className="text-[10px] text-indigo-600 font-bold flex items-center gap-1">
+                                                            <CheckCircle2 size={10} />
+                                                            <span>Signed by {log.signer_name || 'Unknown'}:</span> {new Date(log.signed_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+                                                        </p>
+                                                        {log.signature_image && (
+                                                            <div className="mt-1 bg-white p-1 rounded border border-slate-200 inline-block">
+                                                                <img src={log.signature_image} alt="Signature" className="h-6 object-contain" />
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 )}
                                                 {nextLog && (
                                                     <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
@@ -457,6 +471,43 @@ export default function DocumentController() {
                                         </select>
                                     </div>
                                 </div>
+
+                                {selectedDoc.status === 'signed' && (
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                        <h4 className="text-xs font-bold text-slate-900 uppercase mb-3 flex items-center gap-2">
+                                            <Edit2 size={12} /> Digital Signature
+                                        </h4>
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 mb-1">Signer Name</label>
+                                                <input
+                                                    className="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none"
+                                                    placeholder="Enter name of person signing..."
+                                                    value={signerName}
+                                                    onChange={(e) => setSignerName(e.target.value)}
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-bold text-slate-500 mb-1">Signature</label>
+                                                <div className="border border-slate-300 rounded-lg overflow-hidden bg-white">
+                                                    <SignatureCanvas
+                                                        ref={sigPad}
+                                                        penColor='black'
+                                                        canvasProps={{ width: 450, height: 150, className: 'sigCanvas' }}
+                                                    />
+                                                </div>
+                                                <button
+                                                    onClick={() => sigPad.current.clear()}
+                                                    className="mt-2 text-xs text-red-500 hover:text-red-700 font-bold underline"
+                                                >
+                                                    Clear Signature
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 mb-1">Update Note (What needs to be signed?)</label>
                                     <textarea

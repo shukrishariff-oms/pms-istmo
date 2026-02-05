@@ -27,6 +27,8 @@ class DocumentUpdate(BaseModel):
     status: Optional[str] = None
     description: Optional[str] = None
     signed_at: Optional[datetime] = None
+    signer_name: Optional[str] = None
+    signature_image: Optional[str] = None
     is_correction: Optional[bool] = False
 
 class DocumentLogResponse(BaseModel):
@@ -37,6 +39,8 @@ class DocumentLogResponse(BaseModel):
     note: Optional[str]
     timestamp: datetime
     signed_at: Optional[datetime] = None
+    signer_name: Optional[str] = None
+    signature_image: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -150,6 +154,12 @@ async def update_document(
             latest_log.status = db_doc.status
             if doc_update.description:
                 latest_log.note = doc_update.description
+            
+            # Update signature info if provided
+            if doc_update.signer_name:
+                latest_log.signer_name = doc_update.signer_name
+            if doc_update.signature_image:
+                latest_log.signature_image = doc_update.signature_image
     else:
         # TRANSFERRING TO NEW HOLDER (Handoff or Reroute)
         if doc_update.is_correction and latest_log:
@@ -175,7 +185,9 @@ async def update_document(
                 to_holder=db_doc.current_holder,
                 status=db_doc.status,
                 note=doc_update.description if doc_update.description else f"Transferred to {db_doc.current_holder}",
-                signed_at=datetime.now() if db_doc.status == "signed" else None
+                signed_at=datetime.now() if db_doc.status == "signed" else None,
+                signer_name=doc_update.signer_name if db_doc.status == "signed" else None,
+                signature_image=doc_update.signature_image if db_doc.status == "signed" else None
             )
             db.add(new_log)
 
