@@ -158,6 +158,8 @@ async def update_document(
             latest_log.status = db_doc.status
             if doc_update.description:
                 latest_log.note = doc_update.description
+            elif latest_log.note and (latest_log.note.startswith("Transferred to") or latest_log.note == ""):
+                latest_log.note = f"Transferred to {db_doc.current_holder}"
         else:
             # NORMAL TRANSFER: Close previous person and create new record
             if latest_log:
