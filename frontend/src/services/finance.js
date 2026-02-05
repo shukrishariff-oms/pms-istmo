@@ -107,3 +107,12 @@ export const updateBudgetRequest = async (id, data) => {
     if (!response.ok) throw new Error("Failed to update request");
     return response.json();
 };
+
+export const recalculateBudgets = async () => {
+    const response = await fetch(`${API_URL}/finance/recalculate-budgets`, {
+        method: 'POST',
+        headers: getHeaders()
+    });
+    if (!response.ok) throw new Error("Failed to recalculate budgets");
+    return response.json();
+};

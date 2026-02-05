@@ -10,7 +10,8 @@ import {
     deleteDepartmentExpense,
     deleteBudgetRequest,
     updateDepartmentExpense,
-    updateBudgetRequest
+    updateBudgetRequest,
+    recalculateBudgets
 } from '../services/finance';
 import { getCategories } from '../services/categories';
 import {
@@ -29,7 +30,8 @@ import {
     Wallet,
     X,
     Trash2,
-    Pencil
+    Pencil,
+    RefreshCw
 } from 'lucide-react';
 import clsx from 'clsx';
 import { formatDate } from '../utils/dateUtils';
@@ -64,6 +66,7 @@ export default function FinanceDashboard() {
 
     const [editingExpense, setEditingExpense] = useState(null);
     const [editingRequest, setEditingRequest] = useState(null);
+    const [isRecalculating, setIsRecalculating] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -247,6 +250,20 @@ export default function FinanceDashboard() {
             loadData(true);
         } catch (err) {
             alert("Gagal mengemaskini permohonan: " + err.message);
+        }
+    }
+
+    async function handleRecalculate() {
+        if (!window.confirm("Adakah anda pasti mahu mengira semula semua bajet kategori? Ini akan menyelaraskan semula 'Budget Cards' mengikut rekod dalam Ledger.")) return;
+        setIsRecalculating(true);
+        try {
+            await recalculateBudgets();
+            alert("Pemulihan bajet berjaya!");
+            loadData(true);
+        } catch (err) {
+            alert("Gagal mengira semula bajet: " + err.message);
+        } finally {
+            setIsRecalculating(false);
         }
     }
 
@@ -508,6 +525,20 @@ export default function FinanceDashboard() {
                                 </div>
                             </div>
                             <div className="flex gap-2">
+                                {['admin', 'hod'].includes(role.toLowerCase()) && (
+                                    <button
+                                        onClick={handleRecalculate}
+                                        disabled={isRecalculating}
+                                        className={clsx(
+                                            "flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all",
+                                            isRecalculating ? "bg-slate-100 text-slate-400" : "bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100"
+                                        )}
+                                        title="Recalculate all category totals based on approved budget requests"
+                                    >
+                                        <RefreshCw size={12} className={isRecalculating ? "animate-spin" : ""} />
+                                        {isRecalculating ? "Calculating..." : "Recalculate Pots"}
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => {
                                         setNewExpense({

@@ -417,3 +417,42 @@ async def update_budget_request(
             
     db.commit()
     return req
+
+@router.post("/recalculate-budgets")
+async def recalculate_all_budgets(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role not in [models.UserRole.ADMIN, models.UserRole.HOD]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    try:
+        # Zero out all category budgets first
+        db.query(models.DepartmentBudget).update({"amount": 0.0})
+        
+        # Get all approved requests
+        approved_requests = db.query(models.BudgetRequest).filter(
+            models.BudgetRequest.status == models.RequestStatus.APPROVED
+        ).all()
+        
+        for req in approved_requests:
+            cat_budget = db.query(models.DepartmentBudget).filter(
+                models.DepartmentBudget.department_id == req.department_id,
+                models.DepartmentBudget.category == req.category
+            ).first()
+            
+            if cat_budget:
+                cat_budget.amount += req.amount
+            else:
+                new_cat = models.DepartmentBudget(
+                    department_id=req.department_id,
+                    category=req.category,
+                    amount=req.amount
+                )
+                db.add(new_cat)
+        
+        db.commit()
+        return {"message": "Budgets successfully recalculated based on ledger entries"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
