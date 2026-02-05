@@ -19,7 +19,7 @@ origins = [
 
 from app.db.database import get_db, engine, Base
 from app.models import sql_models
-from app.api import auth, projects, portfolio, finance, users, documents, categories, notes
+from app.api import auth, projects, portfolio, finance, users, documents, categories, notes, issues
 
 # Create tables on startup
 Base.metadata.create_all(bind=engine)
@@ -40,6 +40,7 @@ app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(documents.router, prefix="/documents", tags=["Documents"])
 app.include_router(categories.router, prefix="/categories", tags=["Categories"])
 app.include_router(notes.router, prefix="/notes", tags=["Notes"])
+app.include_router(issues.router, prefix="/issues", tags=["Issues"])
 
 # Serve Frontend Static Files
 # We mount this LAST so it doesn't interfere with API routes

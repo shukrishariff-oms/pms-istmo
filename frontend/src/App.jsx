@@ -11,6 +11,7 @@ import StaffDashboard from './pages/StaffDashboard';
 import StaffDirectory from './pages/StaffDirectory';
 import Settings from './pages/Settings';
 import NotesPage from './pages/NotesPage';
+import IssueLogPage from './pages/IssueLogPage';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -43,6 +44,7 @@ function App() {
         <Route path="/admin/staff" element={<ProtectedRoute><StaffDirectory /></ProtectedRoute>} />
         <Route path="/admin/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/notes" element={<ProtectedRoute><NotesPage /></ProtectedRoute>} />
+        <Route path="/issues" element={<ProtectedRoute><IssueLogPage /></ProtectedRoute>} />
 
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/login" replace />} />

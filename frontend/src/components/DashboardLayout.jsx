@@ -16,7 +16,8 @@ import {
     Users,
     FileText,
     Kanban,
-    StickyNote
+    StickyNote,
+    AlertCircle
 } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -35,6 +36,7 @@ const SIDEBAR_ITEMS = {
         { label: 'All Projects', path: '/workspace', icon: Briefcase },
         { label: 'Document Tracker', path: '/documents', icon: FileText },
         { label: 'Notes', path: '/notes', icon: StickyNote },
+        { label: 'Issue Log', path: '/issues', icon: AlertCircle },
     ],
     hod: [
         { label: 'Portfolio', path: '/portfolio', icon: PieChart },
@@ -42,18 +44,21 @@ const SIDEBAR_ITEMS = {
         { label: 'Approvals', path: '/portfolio/approvals', icon: ListTodo },
         { label: 'Document Tracker', path: '/documents', icon: FileText },
         { label: 'Notes', path: '/notes', icon: StickyNote },
+        { label: 'Issue Log', path: '/issues', icon: AlertCircle },
     ],
     staff: [
         { label: 'My Dashboard', path: '/dashboard', icon: LayoutDashboard },
         { label: 'My Projects', path: '/workspace', icon: Briefcase },
         { label: 'Document Tracker', path: '/documents', icon: FileText },
         { label: 'Notes', path: '/notes', icon: StickyNote },
+        { label: 'Issue Log', path: '/issues', icon: AlertCircle },
     ],
     finance: [
         { label: 'Finance Panel', path: '/finance', icon: Wallet },
         { label: 'Payments', path: '/finance/payments', icon: Wallet },
         { label: 'Document Tracker', path: '/documents', icon: FileText },
         { label: 'Notes', path: '/notes', icon: StickyNote },
+        { label: 'Issue Log', path: '/issues', icon: AlertCircle },
     ]
 };
 

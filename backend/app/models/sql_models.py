@@ -38,6 +38,18 @@ class RequestStatus(str, enum.Enum):
     APPROVED = "approved"
     REJECTED = "rejected"
 
+class IssueStatus(str, enum.Enum):
+    OPEN = "open"
+    IN_PROGRESS = "in_progress"
+    RESOLVED = "resolved"
+    CLOSED = "closed"
+
+class IssuePriority(str, enum.Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
+
 class User(Base):
     __tablename__ = "users"
     
@@ -275,6 +287,27 @@ class Note(Base):
     
     author_id = Column(Integer, ForeignKey("users.id"))
     author = relationship("User")
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class Issue(Base):
+    __tablename__ = "issues"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    description = Column(Text)
+    category = Column(String) # Bug, Feature Request, Support, General
+    priority = Column(String, default=IssuePriority.MEDIUM)
+    status = Column(String, default=IssueStatus.OPEN)
+    
+    reporter_id = Column(Integer, ForeignKey("users.id"))
+    assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+    
+    reporter = relationship("User", foreign_keys=[reporter_id])
+    assignee = relationship("User", foreign_keys=[assignee_id])
+    project = relationship("Project")
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
