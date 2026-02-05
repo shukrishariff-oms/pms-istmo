@@ -602,65 +602,94 @@ export default function FinanceDashboard() {
                             <table className="w-full text-left">
                                 <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
                                     <tr>
-                                        <th className="px-6 py-3">Date</th>
-                                        <th className="px-6 py-3">Type</th>
-                                        <th className="px-6 py-3">Description</th>
-                                        <th className="px-6 py-3">Category</th>
-                                        <th className="px-6 py-3 text-right">Debit (Out)</th>
-                                        <th className="px-6 py-3 text-right">Credit (In)</th>
-                                        <th className="px-6 py-3 text-right bg-slate-50">Balance</th>
-                                        {['admin', 'hod'].includes(role.toLowerCase()) && <th className="px-4 py-3 text-center">Action</th>}
+                                        {opexCategoryFilter === 'All' ? (
+                                            <>
+                                                <th className="px-6 py-3">Type</th>
+                                                <th className="px-6 py-3">Category</th>
+                                                <th className="px-6 py-3 text-right bg-slate-50">Balance</th>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <th className="px-6 py-3">Date</th>
+                                                <th className="px-6 py-3">Type</th>
+                                                <th className="px-6 py-3">Description</th>
+                                                <th className="px-6 py-3">Category</th>
+                                                <th className="px-6 py-3 text-right">Debit (Out)</th>
+                                                <th className="px-6 py-3 text-right">Credit (In)</th>
+                                                <th className="px-6 py-3 text-right bg-slate-50">Balance</th>
+                                                {['admin', 'hod'].includes(role.toLowerCase()) && <th className="px-4 py-3 text-center">Action</th>}
+                                            </>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-sm">
                                     {filteredLedger.length > 0 ? filteredLedger.map((item, idx) => (
                                         <tr key={idx} className="hover:bg-slate-50">
-                                            <td className="px-6 py-3 text-slate-500 max-w-[100px] truncate">{formatDate(item.date)}</td>
-                                            <td className="px-6 py-3">
-                                                <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                                                    item.isBaseline ? "bg-slate-100 text-slate-600" :
-                                                        (item.type === 'credit' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700")
-                                                )}>
-                                                    {item.isBaseline ? 'Baseline' : (item.type === 'credit' ? 'Budget' : 'Expense')}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-3 font-medium text-slate-900">{item.title}</td>
-                                            <td className="px-6 py-3 text-slate-500">{item.category}</td>
-                                            <td className="px-6 py-3 text-right text-red-600 font-mono">
-                                                {item.type === 'debit' ? currencyFormatter.format(item.amount) : '-'}
-                                            </td>
-                                            <td className="px-6 py-3 text-right text-emerald-600 font-mono">
-                                                {item.type === 'credit' ? currencyFormatter.format(item.amount) : '-'}
-                                            </td>
-                                            <td className="px-6 py-3 text-right font-bold text-slate-800 font-mono bg-slate-50/50">
-                                                {currencyFormatter.format(item.runningBalance)}
-                                            </td>
-                                            {['admin', 'hod'].includes(role.toLowerCase()) && (
-                                                <td className="px-4 py-3 text-center">
-                                                    {!item.isBaseline && (
-                                                        <div className="flex justify-center gap-1">
-                                                            <button
-                                                                onClick={() => item.originalData ? (item.type === 'debit' ? handleEditExpense(item.originalData) : handleEditRequest(item.originalData)) : alert("Editing not available for this item type")}
-                                                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                                title="Edit"
-                                                            >
-                                                                <Pencil size={14} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => item.type === 'debit' ? handleDeleteExpense(item.id) : handleDeleteRequest(item.id)}
-                                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                                title="Delete"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        </div>
+                                            {opexCategoryFilter === 'All' ? (
+                                                <>
+                                                    <td className="px-6 py-3">
+                                                        <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                                                            item.isBaseline ? "bg-slate-100 text-slate-600" :
+                                                                (item.type === 'credit' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700")
+                                                        )}>
+                                                            {item.isBaseline ? 'Baseline' : (item.type === 'credit' ? 'Budget' : 'Expense')}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-3 text-slate-500">{item.category}</td>
+                                                    <td className="px-6 py-3 text-right font-bold text-slate-800 font-mono bg-slate-50/50">
+                                                        {currencyFormatter.format(item.runningBalance)}
+                                                    </td>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <td className="px-6 py-3 text-slate-500 max-w-[100px] truncate">{formatDate(item.date)}</td>
+                                                    <td className="px-6 py-3">
+                                                        <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase",
+                                                            item.isBaseline ? "bg-slate-100 text-slate-600" :
+                                                                (item.type === 'credit' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700")
+                                                        )}>
+                                                            {item.isBaseline ? 'Baseline' : (item.type === 'credit' ? 'Budget' : 'Expense')}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-3 font-medium text-slate-900">{item.title}</td>
+                                                    <td className="px-6 py-3 text-slate-500">{item.category}</td>
+                                                    <td className="px-6 py-3 text-right text-red-600 font-mono">
+                                                        {item.type === 'debit' ? currencyFormatter.format(item.amount) : '-'}
+                                                    </td>
+                                                    <td className="px-6 py-3 text-right text-emerald-600 font-mono">
+                                                        {item.type === 'credit' ? currencyFormatter.format(item.amount) : '-'}
+                                                    </td>
+                                                    <td className="px-6 py-3 text-right font-bold text-slate-800 font-mono bg-slate-50/50">
+                                                        {currencyFormatter.format(item.runningBalance)}
+                                                    </td>
+                                                    {['admin', 'hod'].includes(role.toLowerCase()) && (
+                                                        <td className="px-4 py-3 text-center">
+                                                            {!item.isBaseline && (
+                                                                <div className="flex justify-center gap-1">
+                                                                    <button
+                                                                        onClick={() => item.originalData ? (item.type === 'debit' ? handleEditExpense(item.originalData) : handleEditRequest(item.originalData)) : alert("Editing not available for this item type")}
+                                                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                        title="Edit"
+                                                                    >
+                                                                        <Pencil size={14} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => item.type === 'debit' ? handleDeleteExpense(item.id) : handleDeleteRequest(item.id)}
+                                                                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                                        title="Delete"
+                                                                    >
+                                                                        <Trash2 size={14} />
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </td>
                                                     )}
-                                                </td>
+                                                </>
                                             )}
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan="7" className="p-8 text-center text-slate-400 italic">No transactions found for this period.</td>
+                                            <td colSpan={opexCategoryFilter === 'All' ? 3 : 8} className="p-8 text-center text-slate-400 italic">No transactions found for this period.</td>
                                         </tr>
                                     )}
                                 </tbody>
