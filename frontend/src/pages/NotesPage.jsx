@@ -16,9 +16,12 @@ import {
     Calendar,
     AlertCircle,
     CheckCircle2,
-    Circle
+    Circle,
+    Users,
+    Share2
 } from 'lucide-react';
 import * as noteService from '../services/noteService';
+import * as userService from '../services/users';
 import clsx from 'clsx';
 
 const COLORS = [
@@ -47,10 +50,29 @@ export default function NotesPage() {
     });
     const [editingId, setEditingId] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
+    const [currentUser, setCurrentUser] = useState(null);
+
+    // Sharing State
+    const [users, setUsers] = useState([]);
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+    const [noteToShare, setNoteToShare] = useState(null);
+    const [selectedUserIds, setSelectedUserIds] = useState([]);
 
     useEffect(() => {
+        const userId = localStorage.getItem('userId');
+        setCurrentUser(userId ? parseInt(userId) : null);
         loadNotes();
+        loadUsers();
     }, []);
+
+    const loadUsers = async () => {
+        try {
+            const data = await userService.getUsers();
+            setUsers(data);
+        } catch (err) {
+            console.error("Failed to load users", err);
+        }
+    };
 
     const loadNotes = async () => {
         setLoading(true);
@@ -147,6 +169,22 @@ export default function NotesPage() {
         setIsModalOpen(true);
     };
 
+    const openShare = (note) => {
+        setNoteToShare(note);
+        setSelectedUserIds(note.shared_with ? note.shared_with.map(u => u.id) : []);
+        setIsShareModalOpen(true);
+    };
+
+    const handleShareSave = async () => {
+        try {
+            await noteService.shareNote(noteToShare.id, selectedUserIds);
+            setIsShareModalOpen(false);
+            loadNotes();
+        } catch (err) {
+            console.error("Failed to share note", err);
+        }
+    };
+
     const filteredNotes = notes.filter(n =>
         n.title.toLowerCase().includes(search.toLowerCase()) ||
         n.content.toLowerCase().includes(search.toLowerCase())
@@ -170,6 +208,13 @@ export default function NotesPage() {
                 )}
             >
                 <div className={clsx("h-1.5 w-full transition-colors", note.is_completed ? "bg-slate-300" : (note.is_pinned ? "bg-blue-500" : "bg-transparent"))} />
+
+                {note.author_id !== currentUser && (
+                    <div className="absolute top-2 right-4 flex items-center gap-1.5 py-0.5 px-2 bg-indigo-100 text-indigo-700 rounded-full text-[9px] font-black uppercase tracking-tighter">
+                        <Users size={10} />
+                        Shared with me
+                    </div>
+                )}
 
                 <div className="p-5">
                     <div className="flex items-start justify-between mb-3 gap-3">
@@ -208,6 +253,11 @@ export default function NotesPage() {
                             <button onClick={() => openEdit(note)} className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
                                 <Edit3 size={16} />
                             </button>
+                            {note.author_id === currentUser && (
+                                <button onClick={() => openShare(note)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                    <Share2 size={16} />
+                                </button>
+                            )}
                             <button onClick={() => handleDelete(note.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                                 <Trash2 size={16} />
                             </button>
@@ -461,6 +511,78 @@ export default function NotesPage() {
                                 className="flex-[2] py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-black transition-all shadow-xl shadow-slate-900/20 active:scale-95 text-sm uppercase tracking-widest disabled:opacity-50 disabled:pointer-events-none"
                             >
                                 {editingId ? 'Keep Changes' : 'Confirm & Save'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isShareModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300">
+                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300 flex flex-col max-h-[80vh]">
+                        <div className="flex items-center justify-between px-8 py-6 bg-slate-50/50 border-b border-slate-100">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+                                    <Share2 size={20} />
+                                </div>
+                                <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                                    Share Note
+                                </h2>
+                            </div>
+                            <button onClick={() => setIsShareModalOpen(false)} className="p-2.5 hover:bg-slate-200 rounded-xl transition-all active:scale-90">
+                                <X size={20} className="text-slate-400" />
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-8 space-y-4">
+                            <p className="text-sm text-slate-500 font-medium">Select staff members to share this note with:</p>
+                            <div className="space-y-2">
+                                {users.filter(u => u.id !== currentUser).map(user => (
+                                    <button
+                                        key={user.id}
+                                        onClick={() => {
+                                            if (selectedUserIds.includes(user.id)) {
+                                                setSelectedUserIds(selectedUserIds.filter(id => id !== user.id));
+                                            } else {
+                                                setSelectedUserIds([...selectedUserIds, user.id]);
+                                            }
+                                        }}
+                                        className={clsx(
+                                            "w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all",
+                                            selectedUserIds.includes(user.id) ? "border-indigo-500 bg-indigo-50" : "border-slate-100 hover:border-slate-200"
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-sm font-bold text-slate-600 uppercase">
+                                                {(user.full_name || user.username)[0]}
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="font-bold text-slate-900">{user.full_name || user.username}</p>
+                                                <p className="text-xs text-slate-400 uppercase font-black tracking-widest">{user.role}</p>
+                                            </div>
+                                        </div>
+                                        {selectedUserIds.includes(user.id) && (
+                                            <CheckCircle2 size={20} className="text-indigo-600" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="px-8 py-6 bg-slate-50 border-t border-slate-100 flex gap-4">
+                            <button
+                                type="button"
+                                onClick={() => setIsShareModalOpen(false)}
+                                className="flex-1 py-4 text-slate-500 rounded-2xl font-bold hover:bg-slate-200 transition-all text-sm uppercase tracking-wide"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleShareSave}
+                                type="button"
+                                className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 active:scale-95 text-sm uppercase tracking-widest"
+                            >
+                                Save Sharing
                             </button>
                         </div>
                     </div>

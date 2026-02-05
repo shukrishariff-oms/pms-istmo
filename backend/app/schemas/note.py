@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from .project_schemas import UserResponse
 
@@ -22,12 +22,16 @@ class NoteUpdate(BaseModel):
     reminder_date: Optional[datetime] = None
     is_completed: Optional[bool] = None
 
+class NoteShare(BaseModel):
+    user_ids: List[int]
+
 class Note(NoteBase):
     id: int
     author_id: int
     author: Optional[UserResponse] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
+    shared_with: List[UserResponse] = []
 
     class Config:
         from_attributes = True

@@ -42,3 +42,13 @@ export const deleteNote = async (id) => {
     if (!response.ok) throw new Error("Failed to delete note");
     return response.json();
 };
+
+export const shareNote = async (id, userIds) => {
+    const response = await fetch(`${API_URL}/notes/${id}/share`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ user_ids: userIds })
+    });
+    if (!response.ok) throw new Error("Failed to share note");
+    return response.json();
+};

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Enum, Text
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Enum, Text, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import enum
@@ -274,6 +274,13 @@ class AuditLog(Base):
     details = Column(Text)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
 
+note_shares = Table(
+    'note_shares',
+    Base.metadata,
+    Column('note_id', Integer, ForeignKey('notes.id'), primary_key=True),
+    Column('user_id', Integer, ForeignKey('users.id'), primary_key=True)
+)
+
 class Note(Base):
     __tablename__ = "notes"
     
@@ -290,6 +297,8 @@ class Note(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    shared_with = relationship("User", secondary=note_shares)
 
 class Issue(Base):
     __tablename__ = "issues"

@@ -49,6 +49,18 @@ def migrate_notes():
             print("Adding is_completed column to notes table...")
             cursor.execute("ALTER TABLE notes ADD COLUMN is_completed BOOLEAN DEFAULT 0")
 
+        # 3. Create note_shares table if it doesn't exist
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS note_shares (
+                note_id INTEGER,
+                user_id INTEGER,
+                PRIMARY KEY (note_id, user_id),
+                FOREIGN KEY (note_id) REFERENCES notes (id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            )
+        """)
+        print("Note shares table verified/created.")
+
         conn.commit()
         print("Notes migration successful.")
     except Exception as e:
