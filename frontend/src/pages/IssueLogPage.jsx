@@ -72,7 +72,14 @@ export default function IssueLogPage() {
     }
 
     async function handleSubmit() {
-        if (!form.title || !form.description) return;
+        if (!form.title || !form.title.trim()) {
+            alert("Please enter an issue title.");
+            return;
+        }
+        if (!form.description || !form.description.trim()) {
+            alert("Please provide a detailed description.");
+            return;
+        }
         try {
             if (selectedIssue) {
                 await issueService.updateIssue(selectedIssue.id, form);
