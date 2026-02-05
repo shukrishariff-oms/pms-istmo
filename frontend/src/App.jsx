@@ -10,6 +10,7 @@ import DocumentController from './pages/DocumentController';
 import StaffDashboard from './pages/StaffDashboard';
 import StaffDirectory from './pages/StaffDirectory';
 import Settings from './pages/Settings';
+import NotesPage from './pages/NotesPage';
 
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -41,6 +42,7 @@ function App() {
         <Route path="/documents" element={<ProtectedRoute><DocumentController /></ProtectedRoute>} />
         <Route path="/admin/staff" element={<ProtectedRoute><StaffDirectory /></ProtectedRoute>} />
         <Route path="/admin/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/notes" element={<ProtectedRoute><NotesPage /></ProtectedRoute>} />
 
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/login" replace />} />

@@ -252,6 +252,7 @@ class DocumentLog(Base):
     
     document = relationship("DocumentTracker", back_populates="logs")
 
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
     
@@ -260,3 +261,16 @@ class AuditLog(Base):
     action = Column(String)
     details = Column(Text)
     timestamp = Column(DateTime(timezone=True), server_default=func.now())
+
+class Note(Base):
+    __tablename__ = "notes"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    content = Column(Text)
+    
+    author_id = Column(Integer, ForeignKey("users.id"))
+    author = relationship("User")
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
