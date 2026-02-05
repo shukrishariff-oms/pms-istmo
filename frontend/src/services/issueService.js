@@ -11,19 +11,23 @@ const getHeaders = () => {
 
 const getIssues = async (params = {}) => {
     const query = new URLSearchParams(params).toString();
-    const url = query ? `${API_URL}?${query}` : API_URL;
+    const url = query ? `${API_URL}/?${query}` : `${API_URL}/`;
     const response = await fetch(url, { headers: getHeaders() });
     if (!response.ok) throw new Error("Failed to fetch issues");
     return response.json();
 };
 
 const createIssue = async (issueData) => {
-    const response = await fetch(API_URL, {
+    const response = await fetch(`${API_URL}/`, {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(issueData)
     });
-    if (!response.ok) throw new Error("Failed to create issue");
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Create Issue Error:", errorData);
+        throw new Error(errorData.detail || "Failed to create issue");
+    }
     return response.json();
 };
 
