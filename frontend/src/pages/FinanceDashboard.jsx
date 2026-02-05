@@ -613,7 +613,7 @@ export default function FinanceDashboard() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-sm">
-                                    {ledgerWithBalance.length > 0 ? ledgerWithBalance.map((item, idx) => (
+                                    {filteredLedger.length > 0 ? filteredLedger.map((item, idx) => (
                                         <tr key={idx} className="hover:bg-slate-50">
                                             <td className="px-6 py-3 text-slate-500 max-w-[100px] truncate">{formatDate(item.date)}</td>
                                             <td className="px-6 py-3">
