@@ -472,47 +472,46 @@ export default function DocumentController() {
                                     </div>
                                 </div>
 
-                                {selectedDoc.status === 'signed' && (
-                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                                        <h4 className="text-xs font-bold text-slate-900 uppercase mb-3 flex items-center gap-2">
-                                            <Edit2 size={12} /> Digital Signature
-                                        </h4>
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                    <h4 className="text-xs font-bold text-slate-900 uppercase mb-3 flex items-center gap-2">
+                                        <Edit2 size={12} /> Receiver Proof of Handover (Optional)
+                                    </h4>
 
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 mb-1">Signer Name</label>
-                                                <input
-                                                    className="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none"
-                                                    placeholder="Enter name of person signing..."
-                                                    value={signerName}
-                                                    onChange={(e) => setSignerName(e.target.value)}
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 mb-1">Receiver Name (Secretary / Staff)</label>
+                                            <input
+                                                className="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none"
+                                                placeholder="Enter name of person signing..."
+                                                value={signerName}
+                                                onChange={(e) => setSignerName(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-bold text-slate-500 mb-1">Signature</label>
+                                            <div className="border border-slate-300 rounded-lg overflow-hidden bg-white">
+                                                <SignatureCanvas
+                                                    ref={sigPad}
+                                                    penColor='black'
+                                                    canvasProps={{
+                                                        width: 450,
+                                                        height: 150,
+                                                        className: 'sigCanvas',
+                                                        style: { touchAction: 'none' }
+                                                    }}
                                                 />
                                             </div>
-
-                                            <div>
-                                                <label className="block text-xs font-bold text-slate-500 mb-1">Signature</label>
-                                                <div className="border border-slate-300 rounded-lg overflow-hidden bg-white">
-                                                    <SignatureCanvas
-                                                        ref={sigPad}
-                                                        penColor='black'
-                                                        canvasProps={{
-                                                            width: 450,
-                                                            height: 150,
-                                                            className: 'sigCanvas',
-                                                            style: { touchAction: 'none' }
-                                                        }}
-                                                    />
-                                                </div>
-                                                <button
-                                                    onClick={() => sigPad.current.clear()}
-                                                    className="mt-2 text-xs text-red-500 hover:text-red-700 font-bold underline"
-                                                >
-                                                    Clear Signature
-                                                </button>
-                                            </div>
+                                            <button
+                                                onClick={() => sigPad.current.clear()}
+                                                className="mt-2 text-xs text-red-500 hover:text-red-700 font-bold underline"
+                                            >
+                                                Clear Signature
+                                            </button>
                                         </div>
                                     </div>
-                                )}
+                                </div>
+
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 mb-1">Update Note (What needs to be signed?)</label>
                                     <textarea

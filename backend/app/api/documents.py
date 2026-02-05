@@ -185,9 +185,10 @@ async def update_document(
                 to_holder=db_doc.current_holder,
                 status=db_doc.status,
                 note=doc_update.description if doc_update.description else f"Transferred to {db_doc.current_holder}",
-                signed_at=datetime.now() if db_doc.status == "signed" else None,
-                signer_name=doc_update.signer_name if db_doc.status == "signed" else None,
-                signature_image=doc_update.signature_image if db_doc.status == "signed" else None
+                note=doc_update.description if doc_update.description else f"Transferred to {db_doc.current_holder}",
+                signed_at=datetime.now() if doc_update.signature_image else None,
+                signer_name=doc_update.signer_name,
+                signature_image=doc_update.signature_image
             )
             db.add(new_log)
 
