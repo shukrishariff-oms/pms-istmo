@@ -17,7 +17,8 @@ import {
     FileText,
     Kanban,
     StickyNote,
-    AlertCircle
+    AlertCircle,
+    Clock
 } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
