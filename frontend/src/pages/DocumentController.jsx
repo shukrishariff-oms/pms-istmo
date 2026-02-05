@@ -368,17 +368,22 @@ export default function DocumentController() {
                                                     <ArrowDownRight size={10} className="text-slate-400" />
                                                     <span className="font-medium">Received:</span> {new Date(log.timestamp).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
                                                 </p>
-                                                {log.signed_at && (
-                                                    <div className="mt-1">
-                                                        <p className="text-[10px] text-indigo-600 font-bold flex items-center gap-1">
-                                                            <CheckCircle2 size={10} />
-                                                            <span>Received by {log.signer_name || 'Unknown'}:</span> {new Date(log.signed_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
-                                                        </p>
-                                                        {log.signature_image && (
-                                                            <div className="mt-1 bg-white p-1 rounded border border-slate-200 inline-block">
-                                                                <img src={log.signature_image} alt="Signature" className="h-6 object-contain" />
-                                                            </div>
-                                                        )}
+                                                <div className="mt-1">
+                                                    <p className="text-[10px] text-indigo-600 font-bold flex items-center gap-1">
+                                                        <CheckCircle2 size={10} />
+                                                        <span>Received by {log.signer_name || 'Unknown'}:</span> {new Date(log.signed_at).toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short' })}
+                                                    </p>
+                                                    {log.signature_image && (
+                                                        <div className="mt-1 bg-white p-1 rounded border border-slate-200 inline-block">
+                                                            <img src={log.signature_image} alt="Signature" className="h-6 object-contain" />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                )}
+                                                {log.status === 'signed' && (
+                                                    <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                                        <span className="text-[10px] font-bold uppercase">Signed by {log.to_holder}</span>
                                                     </div>
                                                 )}
                                                 {nextLog && (
