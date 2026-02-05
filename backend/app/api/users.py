@@ -58,8 +58,7 @@ async def get_users(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    if current_user.role != models.UserRole.ADMIN:
-        raise HTTPException(status_code=403, detail="Not authorized")
+    # Allow all authenticated users to see user list (for sharing/assigning)
     return db.query(models.User).all()
 
 @router.post("/", response_model=UserResponse)
