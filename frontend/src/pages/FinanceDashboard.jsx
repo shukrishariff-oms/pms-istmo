@@ -353,9 +353,16 @@ export default function FinanceDashboard() {
         ...requestCategories
     ])];
 
+    // Aggregate Balances for "All" Summary View
+    const summaryLedger = Object.entries(potBalances).map(([category, balance]) => ({
+        category,
+        runningBalance: balance,
+        isSummary: true
+    })).sort((a, b) => a.category.localeCompare(b.category));
+
     // Filter Ledger by Category
     const filteredLedger = opexCategoryFilter === 'All'
-        ? ledgerWithBalance
+        ? summaryLedger
         : ledgerWithBalance.filter(item => (item.category || "Uncategorized") === opexCategoryFilter);
 
     return (
@@ -604,7 +611,6 @@ export default function FinanceDashboard() {
                                     <tr>
                                         {opexCategoryFilter === 'All' ? (
                                             <>
-                                                <th className="px-6 py-3">Type</th>
                                                 <th className="px-6 py-3">Category</th>
                                                 <th className="px-6 py-3 text-right bg-slate-50">Balance</th>
                                             </>
@@ -627,15 +633,7 @@ export default function FinanceDashboard() {
                                         <tr key={idx} className="hover:bg-slate-50">
                                             {opexCategoryFilter === 'All' ? (
                                                 <>
-                                                    <td className="px-6 py-3">
-                                                        <span className={clsx("px-2 py-0.5 rounded text-[10px] font-bold uppercase",
-                                                            item.isBaseline ? "bg-slate-100 text-slate-600" :
-                                                                (item.type === 'credit' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700")
-                                                        )}>
-                                                            {item.isBaseline ? 'Baseline' : (item.type === 'credit' ? 'Budget' : 'Expense')}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-3 text-slate-500">{item.category}</td>
+                                                    <td className="px-6 py-3 font-medium text-slate-900">{item.category}</td>
                                                     <td className="px-6 py-3 text-right font-bold text-slate-800 font-mono bg-slate-50/50">
                                                         {currencyFormatter.format(item.runningBalance)}
                                                     </td>
@@ -689,7 +687,7 @@ export default function FinanceDashboard() {
                                         </tr>
                                     )) : (
                                         <tr>
-                                            <td colSpan={opexCategoryFilter === 'All' ? 3 : 8} className="p-8 text-center text-slate-400 italic">No transactions found for this period.</td>
+                                            <td colSpan={opexCategoryFilter === 'All' ? 2 : 8} className="p-8 text-center text-slate-400 italic">No transactions found for this period.</td>
                                         </tr>
                                     )}
                                 </tbody>
