@@ -25,6 +25,7 @@ def create_note(
         color=note.color,
         is_pinned=note.is_pinned,
         reminder_date=note.reminder_date,
+        is_completed=note.is_completed,
         author_id=current_user.id
     )
     db.add(db_note)

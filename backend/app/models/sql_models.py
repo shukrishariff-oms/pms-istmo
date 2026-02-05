@@ -271,6 +271,7 @@ class Note(Base):
     color = Column(String, default="#ffffff") # Hex color for the note
     is_pinned = Column(Boolean, default=False)
     reminder_date = Column(DateTime(timezone=True), nullable=True)
+    is_completed = Column(Boolean, default=False)
     
     author_id = Column(Integer, ForeignKey("users.id"))
     author = relationship("User")

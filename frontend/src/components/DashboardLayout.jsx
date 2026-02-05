@@ -206,6 +206,7 @@ function NotificationBell() {
                 const now = new Date();
                 // Show reminders due within 24 hours
                 const dueReminders = notes.filter(n =>
+                    !n.is_completed &&
                     n.reminder_date &&
                     new Date(n.reminder_date) <= new Date(now.getTime() + 24 * 60 * 60 * 1000)
                 ).sort((a, b) => new Date(a.reminder_date) - new Date(b.reminder_date));

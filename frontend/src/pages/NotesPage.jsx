@@ -14,7 +14,9 @@ import {
     Palette,
     Bell,
     Calendar,
-    AlertCircle
+    AlertCircle,
+    CheckCircle2,
+    Circle
 } from 'lucide-react';
 import * as noteService from '../services/noteService';
 import clsx from 'clsx';
@@ -40,7 +42,8 @@ export default function NotesPage() {
         content: '',
         color: '#ffffff',
         is_pinned: false,
-        reminder_date: ''
+        reminder_date: '',
+        is_completed: false
     });
     const [editingId, setEditingId] = useState(null);
     const [copiedId, setCopiedId] = useState(null);
@@ -54,10 +57,14 @@ export default function NotesPage() {
         try {
             const data = await noteService.getNotes();
             const sortedData = data.sort((a, b) => {
-                if (a.is_pinned === b.is_pinned) {
-                    return new Date(b.created_at) - new Date(a.created_at);
+                // Completed notes go to bottom
+                if (a.is_completed !== b.is_completed) {
+                    return a.is_completed ? 1 : -1;
                 }
-                return a.is_pinned ? -1 : 1;
+                if (a.is_pinned !== b.is_pinned) {
+                    return a.is_pinned ? -1 : 1;
+                }
+                return new Date(b.created_at) - new Date(a.created_at);
             });
             setNotes(sortedData);
         } catch (err) {
@@ -89,7 +96,7 @@ export default function NotesPage() {
     };
 
     const resetForm = () => {
-        setCurrentNote({ title: '', content: '', color: '#ffffff', is_pinned: false, reminder_date: '' });
+        setCurrentNote({ title: '', content: '', color: '#ffffff', is_pinned: false, reminder_date: '', is_completed: false });
         setEditingId(null);
     };
 
@@ -112,6 +119,15 @@ export default function NotesPage() {
         }
     };
 
+    const toggleComplete = async (note) => {
+        try {
+            await noteService.updateNote(note.id, { is_completed: !note.is_completed });
+            loadNotes();
+        } catch (err) {
+            console.error("Failed to toggle completion", err);
+        }
+    };
+
     const copyToClipboard = (note) => {
         navigator.clipboard.writeText(`${note.title}\n\n${note.content}`);
         setCopiedId(note.id);
@@ -124,7 +140,8 @@ export default function NotesPage() {
             content: note.content,
             color: note.color || '#ffffff',
             is_pinned: note.is_pinned || false,
-            reminder_date: note.reminder_date ? new Date(note.reminder_date).toISOString().slice(0, 16) : ''
+            reminder_date: note.reminder_date ? new Date(note.reminder_date).toISOString().slice(0, 16) : '',
+            is_completed: note.is_completed || false
         });
         setEditingId(note.id);
         setIsModalOpen(true);
@@ -135,39 +152,56 @@ export default function NotesPage() {
         n.content.toLowerCase().includes(search.toLowerCase())
     );
 
-    const pinnedNotes = filteredNotes.filter(n => n.is_pinned);
-    const otherNotes = filteredNotes.filter(n => !n.is_pinned);
+    const pinnedNotes = filteredNotes.filter(n => n.is_pinned && !n.is_completed);
+    const activeNotes = filteredNotes.filter(n => !n.is_pinned && !n.is_completed);
+    const completedNotes = filteredNotes.filter(n => n.is_completed);
 
     const NoteCard = ({ note }) => {
         const colorOption = COLORS.find(c => c.hex === note.color) || COLORS[0];
-        const isReminderDue = note.reminder_date && new Date(note.reminder_date) < new Date();
+        const isReminderDue = note.reminder_date && new Date(note.reminder_date) < new Date() && !note.is_completed;
 
         return (
             <div
                 className={clsx(
                     "group break-inside-avoid mb-6 rounded-2xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative overflow-hidden",
-                    colorOption.bg,
+                    note.is_completed ? "bg-slate-50 border-slate-200 grayscale-[0.5] opacity-75" : colorOption.bg,
                     colorOption.border,
-                    note.is_pinned ? "ring-2 ring-blue-500/20 shadow-md" : "shadow-sm"
+                    note.is_pinned && !note.is_completed ? "ring-2 ring-blue-500/20 shadow-md" : "shadow-sm"
                 )}
             >
-                <div className={clsx("h-1.5 w-full", note.is_pinned ? "bg-blue-500" : "bg-transparent")} />
+                <div className={clsx("h-1.5 w-full transition-colors", note.is_completed ? "bg-slate-300" : (note.is_pinned ? "bg-blue-500" : "bg-transparent"))} />
 
                 <div className="p-5">
-                    <div className="flex items-start justify-between mb-3">
-                        <h3 className="font-bold text-slate-900 leading-tight text-lg group-hover:text-blue-700 transition-colors">
+                    <div className="flex items-start justify-between mb-3 gap-3">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); toggleComplete(note); }}
+                            className={clsx(
+                                "mt-1 shrink-0 transition-all active:scale-90",
+                                note.is_completed ? "text-emerald-500" : "text-slate-300 hover:text-blue-500"
+                            )}
+                        >
+                            {note.is_completed ? <CheckCircle2 size={22} className="fill-emerald-50" /> : <Circle size={22} />}
+                        </button>
+
+                        <h3 className={clsx(
+                            "font-bold leading-tight text-lg flex-1 transition-all",
+                            note.is_completed ? "text-slate-400 line-through decoration-slate-300" : "text-slate-900 group-hover:text-blue-700"
+                        )}>
                             {note.title}
                         </h3>
+
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                            <button
-                                onClick={() => togglePin(note)}
-                                className={clsx(
-                                    "p-1.5 rounded-lg transition-colors",
-                                    note.is_pinned ? "text-blue-600 bg-blue-100" : "text-slate-400 hover:text-blue-600 hover:bg-blue-50"
-                                )}
-                            >
-                                {note.is_pinned ? <PinOff size={16} /> : <Pin size={16} />}
-                            </button>
+                            {!note.is_completed && (
+                                <button
+                                    onClick={() => togglePin(note)}
+                                    className={clsx(
+                                        "p-1.5 rounded-lg transition-colors",
+                                        note.is_pinned ? "text-blue-600 bg-blue-100" : "text-slate-400 hover:text-blue-600 hover:bg-blue-50"
+                                    )}
+                                >
+                                    {note.is_pinned ? <PinOff size={16} /> : <Pin size={16} />}
+                                </button>
+                            )}
                             <button onClick={() => copyToClipboard(note)} className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors">
                                 {copiedId === note.id ? <Check size={16} className="text-emerald-600" /> : <Copy size={16} />}
                             </button>
@@ -180,11 +214,14 @@ export default function NotesPage() {
                         </div>
                     </div>
 
-                    <p className="text-slate-700 text-sm whitespace-pre-wrap leading-relaxed mb-4">
+                    <p className={clsx(
+                        "text-sm whitespace-pre-wrap leading-relaxed mb-4 transition-colors",
+                        note.is_completed ? "text-slate-400 line-through decoration-slate-200" : "text-slate-700"
+                    )}>
                         {note.content}
                     </p>
 
-                    {note.reminder_date && (
+                    {note.reminder_date && !note.is_completed && (
                         <div className={clsx(
                             "mb-4 py-2 px-3 rounded-xl flex items-center gap-2 text-xs font-bold",
                             isReminderDue ? "bg-red-100 text-red-600 animate-pulse" : "bg-blue-100/50 text-blue-600"
@@ -200,16 +237,16 @@ export default function NotesPage() {
 
                     <div className="flex items-center justify-between pt-3 border-t border-black/5">
                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            <Clock size={12} />
-                            {new Date(note.created_at).toLocaleDateString()}
+                            {note.is_completed ? <CheckCircle2 size={12} className="text-emerald-400" /> : <Clock size={12} />}
+                            {note.is_completed ? "Completed" : new Date(note.created_at).toLocaleDateString()}
                         </div>
                         {note.author && (
                             <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold text-slate-500 uppercase opacity-60">
                                     {note.author.full_name || note.author.username}
                                 </span>
-                                <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                                    {(note.author.full_name || note.author.username)[0].toUpperCase()}
+                                <div className="w-5 h-5 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 uppercase">
+                                    {(note.author.full_name || note.author.username)[0]}
                                 </div>
                             </div>
                         )}
@@ -266,6 +303,7 @@ export default function NotesPage() {
                 </div>
             ) : (
                 <div className="space-y-10">
+                    {/* Pinned Section */}
                     {pinnedNotes.length > 0 && (
                         <section className="space-y-4">
                             <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 ml-1">
@@ -278,12 +316,27 @@ export default function NotesPage() {
                         </section>
                     )}
 
+                    {/* Active Section */}
                     <section className="space-y-4">
                         {pinnedNotes.length > 0 && <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Recent Notes</h2>}
                         <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
-                            {otherNotes.map(note => <NoteCard key={note.id} note={note} />)}
+                            {activeNotes.map(note => <NoteCard key={note.id} note={note} />)}
                         </div>
                     </section>
+
+                    {/* Completed Section */}
+                    {completedNotes.length > 0 && (
+                        <section className="space-y-4 pt-10 border-t border-slate-100">
+                            <h2 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 ml-1">
+                                <CheckCircle2 size={14} className="text-emerald-500" />
+                                Completed Tasks
+                                <span className="ml-auto text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">{completedNotes.length}</span>
+                            </h2>
+                            <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+                                {completedNotes.map(note => <NoteCard key={note.id} note={note} />)}
+                            </div>
+                        </section>
+                    )}
 
                     {filteredNotes.length === 0 && (
                         <div className="p-20 text-center bg-white/50 rounded-[2.5rem] border-4 border-dashed border-slate-200/60 backdrop-blur-sm">
@@ -331,7 +384,7 @@ export default function NotesPage() {
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Note Content</label>
                                 <textarea
                                     required
-                                    rows={6}
+                                    rows={5}
                                     className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all text-slate-700 resize-none font-medium placeholder:text-slate-300 leading-relaxed"
                                     placeholder="Spill your brilliant thoughts here..."
                                     value={currentNote.content}
@@ -372,6 +425,23 @@ export default function NotesPage() {
                                         value={currentNote.reminder_date}
                                         onChange={(e) => setCurrentNote({ ...currentNote, reminder_date: e.target.value })}
                                     />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl hover:border-emerald-200 transition-all group">
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentNote({ ...currentNote, is_completed: !currentNote.is_completed })}
+                                    className={clsx(
+                                        "w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+                                        currentNote.is_completed ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-white border-2 border-slate-200 text-slate-300"
+                                    )}
+                                >
+                                    {currentNote.is_completed ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+                                </button>
+                                <div>
+                                    <p className="text-sm font-black text-slate-900 uppercase tracking-tight">Mark as Done</p>
+                                    <p className="text-[10px] text-slate-400 font-medium">Toggle if this task note is finished.</p>
                                 </div>
                             </div>
                         </form>
