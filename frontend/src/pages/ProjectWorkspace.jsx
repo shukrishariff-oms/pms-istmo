@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask, updateProjectWBS, updateProjectTask, bulkDeleteProjectTasks, downloadWBSTemplate, importWBSTasks, moveProjectTask } from '../services/projects';
+import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask, updateProjectWBS, updateProjectTask, bulkDeleteProjectTasks, downloadWBSTemplate, importWBSTasks, moveProjectTask, exportWBSTasks } from '../services/projects';
 import { getUsers } from '../services/users';
 import {
     Calendar,
@@ -437,8 +437,24 @@ export default function ProjectWorkspace() {
         }
     }
 
-    async function handleImportWBS(e) {
-        const file = e.target.files[0];
+    async function handleExportWBS() {
+        try {
+            const blob = await exportWBSTasks(selectedProjectId);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Project_${project.code}_WBS_Export.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            alert("Failed to export WBS: " + err.message);
+        }
+    }
+
+    async function handleImportWBS(event) {
+        const file = event.target.files[0];
         if (!file) return;
 
         if (!window.confirm("This will import phases and tasks from the Excel file. Proceed?")) return;
@@ -809,6 +825,13 @@ export default function ProjectWorkspace() {
                                     title="Download Excel Template"
                                 >
                                     <Download size={16} /> Template
+                                </button>
+                                <button
+                                    onClick={handleExportWBS}
+                                    className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm"
+                                    title="Export WBS to Excel"
+                                >
+                                    <Download size={16} /> Export
                                 </button>
                                 <label className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 shadow-sm cursor-pointer" title="Import WBS from Excel">
                                     <Upload size={16} /> Import

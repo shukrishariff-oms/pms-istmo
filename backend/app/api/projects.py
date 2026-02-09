@@ -514,6 +514,56 @@ def download_wbs_template():
     }
     return StreamingResponse(output, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
+@router.get("/projects/{project_id}/tasks/export", tags=["WBS"])
+def export_project_tasks(project_id: int, db: Session = Depends(get_db)):
+    """Export all WBS tasks to Excel."""
+    # Verify project exists
+    project = db.query(sql_models.Project).filter(sql_models.Project.id == project_id).first()
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    # Fetch WBS and Tasks
+    wbs_items = db.query(sql_models.WBS).options(
+        joinedload(sql_models.WBS.tasks).joinedload(sql_models.Task.assignee)
+    ).filter(sql_models.WBS.project_id == project_id).all()
+    
+    data = []
+    
+    for wbs in wbs_items:
+        # Sort tasks by position
+        tasks = sorted(wbs.tasks, key=lambda t: (t.position, t.id))
+        
+        for task in tasks:
+            data.append({
+                "Phase Name": wbs.name,
+                "Task Name": task.name,
+                "Description": task.description or "",
+                "Assignee Email": task.assignee.email if task.assignee else "",
+                "Assignee Name": task.assignee.full_name if task.assignee else "",
+                "Status": task.status.value if hasattr(task.status, 'value') else task.status,
+                "Start Date (YYYY-MM-DD)": task.planned_start.strftime("%Y-%m-%d") if task.planned_start else "",
+                "Finish Date (YYYY-MM-DD)": task.planned_end.strftime("%Y-%m-%d") if task.planned_end else "",
+                "Due Date (YYYY-MM-DD)": task.due_date.strftime("%Y-%m-%d") if task.due_date else ""
+            })
+            
+    if not data:
+        # Create an empty dataframe with headers if no data
+        df = pd.DataFrame(columns=["Phase Name", "Task Name", "Description", "Assignee Email", "Status", "Start Date (YYYY-MM-DD)", "Finish Date (YYYY-MM-DD)", "Due Date (YYYY-MM-DD)"])
+    else:
+        df = pd.DataFrame(data)
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Tasks')
+    
+    output.seek(0)
+    
+    filename = f"{project.code}_wbs_export_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    headers = {
+        'Content-Disposition': f'attachment; filename="{filename}"'
+    }
+    return StreamingResponse(output, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
 @router.post("/projects/{project_id}/tasks/import", tags=["WBS"])
 async def import_project_tasks(project_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
     """Import WBS and tasks from an Excel file."""

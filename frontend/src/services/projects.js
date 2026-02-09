@@ -199,3 +199,13 @@ export const moveProjectTask = async (taskId, direction) => {
     if (!response.ok) throw new Error("Failed to move task");
     return response.json();
 };
+
+export const exportWBSTasks = async (projectId) => {
+    const response = await fetch(`${API_URL}/projects/${projectId}/tasks/export`, {
+        headers: {
+            "Authorization": `Bearer ${localStorage.getItem('token')}`
+        }
+    });
+    if (!response.ok) throw new Error("Failed to export tasks");
+    return response.blob();
+};
