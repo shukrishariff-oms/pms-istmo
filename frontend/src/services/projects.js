@@ -189,3 +189,13 @@ export const importWBSTasks = async (projectId, file) => {
     }
     return response.json();
 };
+
+export const moveProjectTask = async (taskId, direction) => {
+    const response = await fetch(`${API_URL}/tasks/${taskId}/move`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ direction })
+    });
+    if (!response.ok) throw new Error("Failed to move task");
+    return response.json();
+};
