@@ -43,9 +43,19 @@ class TaskRead(BaseModel):
     due_date: Optional[datetime] = None
     assignee: Optional[UserResponse] = None
     is_overdue: bool = False
+    position: int = 0
 
     class Config:
         from_attributes = True
+
+class MoveDirection(str, Enum):
+    UP = "up"
+    DOWN = "down"
+    INDENT = "indent"
+    OUTDENT = "outdent"
+
+class TaskMove(BaseModel):
+    direction: MoveDirection
 
 class ProjectRead(BaseModel):
     id: int

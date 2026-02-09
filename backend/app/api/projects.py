@@ -15,7 +15,7 @@ router = APIRouter()
 
 # --- Projects ---
 
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func
 
 def calculate_task_overdue(t, now):
     """Utility to calculate if a task is overdue based on start or due dates."""
@@ -218,6 +218,13 @@ def create_task(project_id: int, task: project_schemas.TaskCreate, db: Session =
     if not wbs:
         raise HTTPException(status_code=400, detail="Invalid WBS ID for this project")
 
+    # Calculate next position
+    max_pos = db.query(func.max(sql_models.Task.position)).filter(
+        sql_models.Task.wbs_id == task.wbs_id,
+        sql_models.Task.parent_id == task.parent_id
+    ).scalar()
+    new_pos = (max_pos + 1) if max_pos is not None else 0
+
     new_task = sql_models.Task(
         wbs_id=task.wbs_id,
         parent_id=task.parent_id,
@@ -227,12 +234,80 @@ def create_task(project_id: int, task: project_schemas.TaskCreate, db: Session =
         status=task.status,
         planned_start=task.planned_start,
         planned_end=task.planned_end,
-        due_date=task.due_date
+        due_date=task.due_date,
+        position=new_pos
     )
     db.add(new_task)
     db.commit()
     db.refresh(new_task)
     return new_task
+
+@router.put("/tasks/{task_id}/move", tags=["WBS"])
+def move_task(task_id: int, move: project_schemas.TaskMove, db: Session = Depends(get_db)):
+    task = db.query(sql_models.Task).filter(sql_models.Task.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    if move.direction == project_schemas.MoveDirection.UP:
+        prev_task = db.query(sql_models.Task).filter(
+            sql_models.Task.wbs_id == task.wbs_id,
+            sql_models.Task.parent_id == task.parent_id,
+            sql_models.Task.position < task.position
+        ).order_by(sql_models.Task.position.desc()).first()
+        
+        if prev_task:
+            task.position, prev_task.position = prev_task.position, task.position
+            db.commit()
+            
+    elif move.direction == project_schemas.MoveDirection.DOWN:
+        next_task = db.query(sql_models.Task).filter(
+            sql_models.Task.wbs_id == task.wbs_id,
+            sql_models.Task.parent_id == task.parent_id,
+            sql_models.Task.position > task.position
+        ).order_by(sql_models.Task.position.asc()).first()
+        
+        if next_task:
+            task.position, next_task.position = next_task.position, task.position
+            db.commit()
+
+    elif move.direction == project_schemas.MoveDirection.INDENT:
+        prev_task = db.query(sql_models.Task).filter(
+            sql_models.Task.wbs_id == task.wbs_id,
+            sql_models.Task.parent_id == task.parent_id,
+            sql_models.Task.position < task.position
+        ).order_by(sql_models.Task.position.desc()).first()
+        
+        if prev_task:
+            task.parent_id = prev_task.id
+            max_pos = db.query(func.max(sql_models.Task.position)).filter(
+                sql_models.Task.wbs_id == task.wbs_id,
+                sql_models.Task.parent_id == prev_task.id
+            ).scalar()
+            task.position = (max_pos + 1) if max_pos is not None else 0
+            db.commit()
+            
+    elif move.direction == project_schemas.MoveDirection.OUTDENT:
+        if task.parent_id:
+            current_parent = db.query(sql_models.Task).filter(sql_models.Task.id == task.parent_id).first()
+            if current_parent:
+                # Find new position: immediately after current_parent
+                new_pos = current_parent.position + 1
+                
+                # Shift siblings in the destination list (siblings of current_parent)
+                siblings = db.query(sql_models.Task).filter(
+                    sql_models.Task.wbs_id == task.wbs_id,
+                    sql_models.Task.parent_id == current_parent.parent_id,
+                    sql_models.Task.position >= new_pos
+                ).all()
+                for t in siblings:
+                    t.position += 1
+                
+                # Update task
+                task.parent_id = current_parent.parent_id
+                task.position = new_pos
+                db.commit()
+    
+    return {"message": "Task moved"}
 
 @router.delete("/wbs/{wbs_id}", tags=["WBS"])
 def delete_wbs_phase(wbs_id: int, db: Session = Depends(get_db)):

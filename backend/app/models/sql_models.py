@@ -193,6 +193,7 @@ class Task(Base):
     assignee_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     status = Column(String, default=TaskStatus.NOT_STARTED)
+    position = Column(Integer, default=0)
     
     # Scheduling
     planned_start = Column(DateTime(timezone=True), nullable=True)

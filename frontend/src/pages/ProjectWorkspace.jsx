@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask, updateProjectWBS, updateProjectTask, bulkDeleteProjectTasks, downloadWBSTemplate, importWBSTasks } from '../services/projects';
+import { getProjects, getProjectDetails, getProjectWBS, getProjectPayments, createProjectWBS, createProjectTask, createProjectPayment, updateProject, updateProjectPayment, deleteProjectPayment, deleteProjectWBS, deleteProjectTask, updateProjectWBS, updateProjectTask, bulkDeleteProjectTasks, downloadWBSTemplate, importWBSTasks, moveProjectTask } from '../services/projects';
 import { getUsers } from '../services/users';
 import {
     Calendar,
@@ -20,7 +20,11 @@ import {
     Trash2,
     GitBranch,
     Download,
-    Upload
+    Upload,
+    ArrowUp,
+    ArrowDown,
+    Indent,
+    Outdent
 } from 'lucide-react';
 import clsx from 'clsx';
 import { formatDate } from '../utils/dateUtils';
@@ -461,6 +465,15 @@ export default function ProjectWorkspace() {
         }
     }
 
+    async function handleMoveTask(taskId, direction) {
+        try {
+            await moveProjectTask(taskId, direction);
+            await loadAllData();
+        } catch (err) {
+            alert("Failed to move task: " + err.message);
+        }
+    }
+
     async function handleBulkDelete() {
         if (selectedTaskIds.length === 0) return;
         if (!window.confirm(`Are you sure you want to delete ${selectedTaskIds.length} tasks?`)) return;
@@ -890,7 +903,7 @@ export default function ProjectWorkspace() {
                                                 const renderRecursive = (items, parentId = null, depth = 0, prefix = '') => {
                                                     return items
                                                         .filter(t => t.parent_id === parentId)
-                                                        .sort((a, b) => a.id - b.id)
+                                                        .sort((a, b) => (a.position - b.position) || (a.id - b.id))
                                                         .map((task, tIdx) => {
                                                             const currentPrefix = prefix ? `${prefix}.${tIdx + 1}` : `${pIdx + 1}.${tIdx + 1}`;
                                                             const start = new Date(task.planned_start || task.created_at || Date.now());
@@ -943,6 +956,12 @@ export default function ProjectWorkspace() {
                                                                         </td>
                                                                         <td className="px-6 py-4 text-center relative">
                                                                             <div className="flex items-center justify-center gap-2">
+                                                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all mr-2 border-r border-slate-200 pr-2">
+                                                                                    <button onClick={() => handleMoveTask(task.id, 'up')} className="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-blue-600 transition-colors" title="Move Up"><ArrowUp size={14} /></button>
+                                                                                    <button onClick={() => handleMoveTask(task.id, 'down')} className="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-blue-600 transition-colors" title="Move Down"><ArrowDown size={14} /></button>
+                                                                                    <button onClick={() => handleMoveTask(task.id, 'indent')} className="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-blue-600 transition-colors" title="Indent (Make Child)"><Indent size={14} /></button>
+                                                                                    <button onClick={() => handleMoveTask(task.id, 'outdent')} className="p-1 hover:bg-slate-200 rounded text-slate-500 hover:text-blue-600 transition-colors" title="Outdent (Move Level Up)"><Outdent size={14} /></button>
+                                                                                </div>
                                                                                 <TaskStatusSelector
                                                                                     task={task}
                                                                                     onStatusChange={handleQuickStatusUpdate}
