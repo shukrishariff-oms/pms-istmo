@@ -18,8 +18,14 @@ origins = [
 ]
 
 from app.db.database import get_db, engine, Base
-from app.models import sql_models
 from app.api import auth, projects, portfolio, finance, users, documents, categories, notes, issues
+
+# Run Auto-Migrations
+try:
+    from scripts.auto_migrate import run_migrations
+    run_migrations()
+except Exception as e:
+    print(f"Error running migrations: {e}")
 
 # Create tables on startup
 Base.metadata.create_all(bind=engine)
