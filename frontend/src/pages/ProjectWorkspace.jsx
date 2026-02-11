@@ -1262,13 +1262,13 @@ export default function ProjectWorkspace() {
                                     {/* Task Rows */}
                                     {(() => {
                                         const renderTimelineRecursive = (items, parentId = null, depth = 0, prefix = '') => {
-                                            return items
-                                                .filter(t => t.parent_id === parentId)
-                                                .sort((a, b) => a.id - b.id)
+                                            return enrichedTasks
+                                                .filter(t => t.wbs_id === phase.id && t.parent_id === parentId)
+                                                .sort((a, b) => (a.position - b.position) || (a.id - b.id))
                                                 .map((task, tIdx) => {
                                                     const currentPrefix = prefix ? `${prefix}.${tIdx + 1}` : `${pIdx + 1}.${tIdx + 1}`;
-                                                    const start = new Date(task.planned_start || task.created_at || Date.now());
-                                                    const end = new Date(task.due_date);
+                                                    const start = task.display_start;
+                                                    const end = task.display_end;
                                                     const duration = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
                                                     const projStart = new Date(derivedStartDate);
                                                     const offsetDays = Math.max(0, Math.floor((start - projStart) / (1000 * 60 * 60 * 24)));
@@ -1291,10 +1291,10 @@ export default function ProjectWorkspace() {
                                                                     {task.name}
                                                                 </div>
                                                                 <div className="w-24 p-1 border-r border-slate-200 text-slate-600">
-                                                                    {formatDate(task.planned_start)}
+                                                                    {formatDate(start)}
                                                                 </div>
                                                                 <div className="w-24 p-1 border-r border-slate-200 text-slate-600">
-                                                                    {formatDate(task.due_date)}
+                                                                    {formatDate(end)}
                                                                 </div>
 
                                                                 {/* Gantt Bar Visualization */}
