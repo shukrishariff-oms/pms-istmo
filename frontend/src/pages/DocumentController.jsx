@@ -142,46 +142,35 @@ export default function DocumentController() {
     );
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Document Controller</h1>
-                    <p className="text-slate-500 text-sm">Track physical documents as they move between stakeholders for signatures.</p>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Document Controller</h1>
+                    <p className="text-slate-500 font-medium mt-1">Track physical documents as they move between stakeholders for signatures.</p>
                 </div>
                 <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 shadow-sm transition-all"
+                    className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-black shadow-xl shadow-slate-200 transition-all hover:-translate-y-0.5"
                 >
                     <Plus size={18} /> Log New Document
                 </button>
-            </div>
+            </header>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p className="text-xs font-bold text-slate-400 uppercase">Total Tracked</p>
-                    <p className="text-2xl font-bold text-slate-900 mt-1">{documents.length}</p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p className="text-xs font-bold text-slate-400 uppercase">Pending Signature</p>
-                    <p className="text-2xl font-bold text-amber-600 mt-1">{documents.filter(d => d.status === 'pending').length}</p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p className="text-xs font-bold text-slate-400 uppercase">In Progress</p>
-                    <p className="text-2xl font-bold text-blue-600 mt-1">{documents.filter(d => d.status === 'in_progress').length}</p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p className="text-xs font-bold text-slate-400 uppercase">Signed / Ongoing</p>
-                    <p className="text-2xl font-bold text-indigo-600 mt-1">{documents.filter(d => d.status === 'signed').length}</p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p className="text-xs font-bold text-slate-400 uppercase">Completed</p>
-                    <p className="text-2xl font-bold text-emerald-600 mt-1">{documents.filter(d => d.status === 'completed').length}</p>
-                </div>
-                <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <p className="text-xs font-bold text-slate-400 uppercase">Lost / Cancelled</p>
-                    <p className="text-2xl font-bold text-red-600 mt-1">{documents.filter(d => ['lost', 'cancelled'].includes(d.status)).length}</p>
-                </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+                {[
+                    { label: "Total Tracked", value: documents.length, color: "text-slate-900", bg: "bg-white" },
+                    { label: "Pending", value: documents.filter(d => d.status === 'pending').length, color: "text-amber-600", bg: "bg-amber-50/50" },
+                    { label: "In Progress", value: documents.filter(d => d.status === 'in_progress').length, color: "text-blue-600", bg: "bg-blue-50/50" },
+                    { label: "Signed", value: documents.filter(d => d.status === 'signed').length, color: "text-indigo-600", bg: "bg-indigo-50/50" },
+                    { label: "Completed", value: documents.filter(d => d.status === 'completed').length, color: "text-emerald-600", bg: "bg-emerald-50/50" },
+                    { label: "Lost/Cancel", value: documents.filter(d => ['lost', 'cancelled'].includes(d.status)).length, color: "text-rose-600", bg: "bg-rose-50/50" }
+                ].map((stat, i) => (
+                    <div key={i} className={clsx("p-5 rounded-[2rem] border border-slate-200/60 shadow-sm transition-all hover:shadow-md", stat.bg)}>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                        <p className={clsx("text-2xl font-black mt-1", stat.color)}>{stat.value}</p>
+                    </div>
+                ))}
             </div>
 
             {/* Main Content */}

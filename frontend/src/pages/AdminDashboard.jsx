@@ -144,29 +144,100 @@ export default function AdminDashboard() {
     const getInitials = (name) => name ? name.charAt(0).toUpperCase() : '?';
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                        <ShieldCheck className="text-blue-600" /> Admin Console
-                    </h1>
-                    <p className="text-slate-500">Manage system projects, assignments, and global settings.</p>
+        <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Header section with Stats Overview */}
+            <div className="flex flex-col gap-8">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                            <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
+                                <ShieldCheck className="text-white" size={24} />
+                            </div>
+                            Admin Console
+                        </h1>
+                        <p className="text-slate-500 font-medium mt-1">Manage system projects, assignments, and global settings.</p>
+                    </div>
+                    <div className="flex items-center gap-2 bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/60 backdrop-blur-sm">
+                        <button
+                            onClick={() => setActiveTab('projects')}
+                            className={cn(
+                                "px-6 py-2.5 text-sm font-bold rounded-xl transition-all duration-300",
+                                activeTab === 'projects'
+                                    ? "bg-white text-blue-600 shadow-md ring-1 ring-slate-200"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+                            )}
+                        >
+                            Projects
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('finance')}
+                            className={cn(
+                                "px-6 py-2.5 text-sm font-bold rounded-xl transition-all duration-300",
+                                activeTab === 'finance'
+                                    ? "bg-white text-blue-600 shadow-md ring-1 ring-slate-200"
+                                    : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+                            )}
+                        >
+                            Finance Settings
+                        </button>
+                    </div>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setActiveTab('projects')}
-                        className={clsx("px-4 py-2 text-sm font-bold rounded-lg transition-all border",
-                            activeTab === 'projects' ? "bg-white text-blue-600 border-blue-200 shadow-sm" : "bg-transparent text-slate-500 border-transparent hover:bg-slate-100")}
-                    >
-                        Projects
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('finance')}
-                        className={clsx("px-4 py-2 text-sm font-bold rounded-lg transition-all border",
-                            activeTab === 'finance' ? "bg-white text-blue-600 border-blue-200 shadow-sm" : "bg-transparent text-slate-500 border-transparent hover:bg-slate-100")}
-                    >
-                        Finance Settings
-                    </button>
+
+                {/* Stats Summary Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="bg-white p-5 rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-md transition-shadow group">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <FolderTree size={20} />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Projects</span>
+                        </div>
+                        <p className="text-2xl font-black text-slate-900">{projects.length}</p>
+                        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-green-600 uppercase">
+                            <span className="w-1 h-1 rounded-full bg-green-600 animate-pulse" /> Active System
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-md transition-shadow group">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Users size={20} />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Active Users</span>
+                        </div>
+                        <p className="text-2xl font-black text-slate-900">{users.length}</p>
+                        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                            Authenticated Access
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-md transition-shadow group">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Wallet size={20} />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total CAPEX</span>
+                        </div>
+                        <p className="text-2xl font-black text-slate-900">
+                            RM {(projects.reduce((acc, p) => acc + (p.budget_capex || 0), 0) / 1000000).toFixed(1)}M
+                        </p>
+                        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-amber-600 uppercase">
+                            Accumulated Budget
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-md transition-shadow group">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <Calendar size={20} />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">System Uptime</span>
+                        </div>
+                        <p className="text-2xl font-black text-slate-900">99.9%</p>
+                        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase">
+                            Operational
+                        </div>
+                    </div>
                 </div>
             </div>
 

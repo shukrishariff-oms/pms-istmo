@@ -8,13 +8,13 @@ import { formatDate } from '../utils/dateUtils';
 const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
 
 const StatCard = ({ label, value, icon: Icon, color }) => (
-    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-        <div className={clsx("p-3 rounded-lg", color)}>
+    <div className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-sm flex items-center gap-5 hover:shadow-md transition-all duration-300 group">
+        <div className={cn("p-4 rounded-2xl group-hover:scale-110 transition-transform duration-300", color)}>
             <Icon size={24} />
         </div>
         <div>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{label}</p>
-            <p className="text-2xl font-bold text-slate-900">{value}</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-2">{label}</p>
+            <p className="text-3xl font-black text-slate-900 tracking-tight">{value}</p>
         </div>
     </div>
 );
@@ -77,18 +77,24 @@ export default function StaffDashboard() {
     );
 
     return (
-        <div className="space-y-8">
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500">
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">
-                        {isAdmin ? 'System Activity Overview' : `Welcome back, ${fullName}!`}
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                        {isAdmin ? (
+                            <span className="flex items-center gap-3">
+                                <TrendingUp className="text-blue-600" /> System Activity
+                            </span>
+                        ) : (
+                            <span>Hello, <span className="text-blue-600 italic">{fullName.split(' ')[0]}</span> 👋</span>
+                        )}
                     </h1>
-                    <p className="text-slate-500">
+                    <p className="text-slate-500 font-medium mt-1">
                         {isAdmin ? 'Monitoring all project activities and document tracking.' : "Here's what's happening with your projects today."}
                     </p>
                 </div>
-                <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium border border-blue-100">
-                    <Calendar size={16} />
+                <div className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest text-slate-500 border border-slate-200/60 shadow-sm transition-all hover:border-blue-200">
+                    <Calendar size={16} className="text-blue-600" />
                     {new Date().toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>
             </header>

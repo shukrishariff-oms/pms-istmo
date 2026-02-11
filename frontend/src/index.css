@@ -1,13 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", system-ui, sans-serif;
-  --color-primary: #0f172a; /* Slate 900 */
-  --color-secondary: #334155; /* Slate 700 */
-  --color-accent: #3b82f6; /* Blue 500 */
+  --font-sans: "Outfit", system-ui, sans-serif;
+  --color-primary: #0f172a; /* Deep Slate */
+  --color-accent: #2563eb; /* Royal Blue */
+  --color-surface: #ffffff;
+  --color-background: #f8fafc;
+  
+  /* Custom ISTMO Brand Colors */
+  --color-istmo-blue: #1e40af;
+  --color-istmo-indigo: #4338ca;
 }
 
 body {
-    background-color: #f8fafc; /* Slate 50 */
-    color: #1e293b; /* Slate 800 */
+    background-color: var(--color-background);
+    color: var(--color-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Scrollbar for a cleaner feel */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
 }

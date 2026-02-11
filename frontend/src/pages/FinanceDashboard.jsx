@@ -366,76 +366,112 @@ export default function FinanceDashboard() {
         : ledgerWithBalance.filter(item => (item.category || "Uncategorized") === opexCategoryFilter);
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Financial Performance</h1>
-                    <div className="flex items-center gap-3 mt-1">
-                        <p className="text-slate-500 text-sm">Track CAPEX Investments & OPEX Efficiency</p>
-                        <button
-                            onClick={() => loadData()}
-                            className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
-                        >
-                            Force Reload Data
-                        </button>
-                        {!deptStats.id && !loading && (
-                            <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold animate-pulse">
-                                Data Error: No Dept ID
-                            </span>
-                        )}
+        <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="flex flex-col gap-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                            <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-200">
+                                <DollarSign className="text-white" size={24} />
+                            </div>
+                            Finance Center
+                        </h1>
+                        <p className="text-slate-500 font-medium mt-1">Track CAPEX Investments & OPEX Efficiency across the department.</p>
                     </div>
-                </div>
-                <div className="flex bg-white rounded-lg p-1 border border-slate-200 shadow-sm">
-                    <button
-                        onClick={() => setActiveTab('capex')}
-                        className={clsx("px-4 py-2 text-sm font-bold rounded-md transition-all", activeTab === 'capex' ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50")}
-                    >
-                        CAPEX Portfolio
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('opex')}
-                        className={clsx("px-4 py-2 text-sm font-bold rounded-md transition-all", activeTab === 'opex' ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50")}
-                    >
-                        Department OPEX
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('requests')}
-                        className={clsx("px-4 py-2 text-sm font-bold rounded-md transition-all", activeTab === 'requests' ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50")}
-                    >
-                        Budget Requests
-                        {requests.filter(r => r.status === 'pending').length > 0 && (
-                            <span className="ml-2 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                                {requests.filter(r => r.status === 'pending').length}
-                            </span>
-                        )}
-                    </button>
+
+                    <div className="flex bg-slate-100/50 p-1.5 rounded-2xl border border-slate-200/60 backdrop-blur-sm">
+                        <button
+                            onClick={() => setActiveTab('capex')}
+                            className={cn(
+                                "px-6 py-2.5 text-sm font-bold rounded-xl transition-all duration-300",
+                                activeTab === 'capex'
+                                    ? "bg-white text-blue-600 shadow-md ring-1 ring-slate-200"
+                                    : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                            )}
+                        >
+                            CAPEX Portfolio
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('opex')}
+                            className={cn(
+                                "px-6 py-2.5 text-sm font-bold rounded-xl transition-all duration-300",
+                                activeTab === 'opex'
+                                    ? "bg-white text-blue-600 shadow-md ring-1 ring-slate-200"
+                                    : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                            )}
+                        >
+                            Department OPEX
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('requests')}
+                            className={cn(
+                                "px-6 py-2.5 text-sm font-bold rounded-xl transition-all duration-300 relative",
+                                activeTab === 'requests'
+                                    ? "bg-white text-blue-600 shadow-md ring-1 ring-slate-200"
+                                    : "text-slate-600 hover:text-slate-900 hover:bg-white/50"
+                            )}
+                        >
+                            Requests
+                            {requests.filter(r => r.status === 'pending').length > 0 && (
+                                <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 text-[10px] text-white font-black items-center justify-center">
+                                        {requests.filter(r => r.status === 'pending').length}
+                                    </span>
+                                </span>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {/* CAPEX VIEW */}
             {activeTab === 'capex' && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className="grid grid-cols-3 gap-6">
-                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total CAPEX Budget</h3>
-                                <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Briefcase size={20} /></div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-white p-7 rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-125 transition-transform duration-700">
+                                <Briefcase size={80} />
                             </div>
-                            <p className="text-2xl font-bold text-slate-900">{currencyFormatter.format(totalCapexBudget)}</p>
+                            <div className="flex flex-col gap-4 relative z-10">
+                                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                                    <Briefcase size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total CAPEX Budget</p>
+                                    <p className="text-3xl font-black text-slate-900 tracking-tight">{currencyFormatter.format(totalCapexBudget)}</p>
+                                </div>
+                            </div>
                         </div>
-                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Utilized</h3>
-                                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><TrendingUp size={20} /></div>
+
+                        <div className="bg-white p-7 rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-125 transition-transform duration-700">
+                                <TrendingUp size={80} />
                             </div>
-                            <p className="text-2xl font-bold text-slate-900">{currencyFormatter.format(totalCapexSpent)}</p>
+                            <div className="flex flex-col gap-4 relative z-10">
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                    <TrendingUp size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Total Utilized</p>
+                                    <p className="text-3xl font-black text-emerald-600 tracking-tight">{currencyFormatter.format(totalCapexSpent)}</p>
+                                </div>
+                            </div>
                         </div>
-                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Remaining</h3>
-                                <div className="p-2 bg-slate-50 text-slate-600 rounded-lg"><PieChart size={20} /></div>
+
+                        <div className="bg-white p-7 rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                            <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-125 transition-transform duration-700">
+                                <PieChart size={80} />
                             </div>
-                            <p className="text-2xl font-bold text-slate-900">{currencyFormatter.format(totalCapexBudget - totalCapexSpent)}</p>
+                            <div className="flex flex-col gap-4 relative z-10">
+                                <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-600 flex items-center justify-center">
+                                    <PieChart size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Remaining Investment</p>
+                                    <p className="text-3xl font-black text-slate-900 tracking-tight">{currencyFormatter.format(totalCapexBudget - totalCapexSpent)}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

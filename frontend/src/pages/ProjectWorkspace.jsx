@@ -566,66 +566,78 @@ export default function ProjectWorkspace() {
             </div>
 
             {/* Header */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <h1 className="text-2xl font-bold text-slate-900">{project.name}</h1>
+            <div className="bg-white rounded-[2rem] shadow-sm border border-slate-200/60 p-8 shadow-slate-100/50">
+                <div className="flex flex-col lg:flex-row justify-between items-start gap-8">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-4 mb-3">
+                            <h1 className="text-3xl font-black text-slate-900 tracking-tight">{project.name}</h1>
                             <StatusBadge status={project.status} />
                         </div>
-                        <p className="text-slate-500 max-w-2xl">{project.description}</p>
+                        <p className="text-slate-500 font-medium leading-relaxed max-w-2xl">{project.description}</p>
                     </div>
-                    <div className="flex flex-col items-end gap-3">
-                        <div className="text-right">
-                            <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Total Budget (Planned)</p>
-                            <p className="text-2xl font-bold text-slate-900">
-                                MYR {(payments.reduce((acc, p) => acc + p.amount, 0)).toLocaleString()}
+                    <div className="flex flex-col sm:flex-row lg:flex-col items-end gap-6 w-full lg:w-auto">
+                        <div className="text-right bg-slate-50 p-4 rounded-2xl border border-slate-100 min-w-[200px]">
+                            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-black mb-1">Total Investment</p>
+                            <p className="text-2xl font-black text-slate-900">
+                                RM {(payments.reduce((acc, p) => acc + p.amount, 0)).toLocaleString()}
                             </p>
                         </div>
                         {localStorage.getItem('role') === 'admin' && (
                             <button
                                 onClick={openEditModal}
-                                className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-xs font-bold"
+                                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-100"
                             >
-                                <Pencil size={14} /> Edit Details
+                                <Pencil size={14} /> Update Project
                             </button>
                         )}
                     </div>
                 </div>
 
                 {/* Key Metrics */}
-                <div className="grid grid-cols-4 gap-6 mt-8 pt-6 border-t border-slate-100">
-                    <div>
-                        <p className="text-xs text-slate-400 font-medium">Start Date</p>
-                        <p className="text-sm font-bold text-slate-900">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mt-10 pt-8 border-t border-slate-100">
+                    <div className="group">
+                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <Calendar size={12} className="text-blue-500" /> Start Date
+                        </p>
+                        <p className="text-sm font-black text-slate-900">
                             {formatDate(derivedStartDate)}
                         </p>
                     </div>
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        <p className="text-[10px] text-slate-500 uppercase tracking-widest mb-1">End Date</p>
-                        <p className="text-sm font-bold text-slate-900">
+                    <div className="group">
+                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <Calendar size={12} className="text-rose-500" /> Delivery Date
+                        </p>
+                        <p className="text-sm font-black text-slate-900">
                             {formatDate(derivedEndDate)}
                         </p>
                     </div>
-                    <div>
-                        <p className="text-xs text-slate-400 font-medium">CAPEX Utilization</p>
-                        <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
+                    <div className="group">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-2">
+                                <Wallet size={12} className="text-amber-500" /> CAPEX Utilization
+                            </p>
+                            <span className="text-[10px] font-black text-slate-900">{Math.round(project.capex_utilization || 0)}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                             <div
-                                className="bg-blue-500 h-full rounded-full transition-all duration-500"
+                                className="bg-blue-600 h-full rounded-full transition-all duration-700 group-hover:scale-y-110"
                                 style={{ width: `${Math.min(100, project.capex_utilization || 0)}%` }}
                             ></div>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">{Math.round(project.capex_utilization || 0)}% Used</p>
                     </div>
-                    <div>
-                        <p className="text-xs text-slate-400 font-medium">Task Progress</p>
-                        <div className="w-full bg-slate-100 h-2 rounded-full mt-2 overflow-hidden">
+                    <div className="group">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-2">
+                                <TrendingUp size={12} className="text-emerald-500" /> Task Progress
+                            </p>
+                            <span className="text-[10px] font-black text-slate-900">{Math.round(project.task_progress || 0)}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                             <div
-                                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                                className="bg-emerald-500 h-full rounded-full transition-all duration-700 group-hover:scale-y-110"
                                 style={{ width: `${Math.min(100, project.task_progress || 0)}%` }}
                             ></div>
                         </div>
-                        <p className="text-xs text-slate-500 mt-1">{Math.round(project.task_progress || 0)}% Completed</p>
                     </div>
                 </div>
             </div>

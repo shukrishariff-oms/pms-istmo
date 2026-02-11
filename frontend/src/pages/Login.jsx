@@ -56,42 +56,43 @@ export default function Login() {
                 <div className="absolute -bottom-40 left-20 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
             </div>
 
-            <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 z-10 p-8">
-                <div className="flex flex-col items-center mb-8">
-                    <div className="w-16 h-16 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-xl mb-4 border border-blue-400/20">
-                        <Kanban size={32} />
+            <div className="w-full max-w-md bg-white/70 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/40 z-10 p-10 ring-1 ring-slate-200/50">
+                <div className="flex flex-col items-center mb-10">
+                    <div className="w-20 h-20 bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 rounded-3xl flex items-center justify-center text-white shadow-2xl shadow-blue-200 mb-6 border border-white/20 transform hover:rotate-3 transition-transform duration-500">
+                        <Kanban size={40} />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900">ISTMO Department</h1>
-                    <p className="text-slate-500 text-sm font-medium">Project Management System</p>
+                    <h1 className="text-3xl font-black text-slate-900 tracking-tight text-center">ISTMO Department</h1>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-1.5 opacity-60">Project Management System</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Username</label>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Identity UID</label>
                         <input
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
-                            placeholder="Enter your username"
+                            className="w-full px-5 py-4 rounded-2xl bg-white/50 border border-slate-200/60 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none font-medium placeholder:text-slate-300"
+                            placeholder="Enter username"
                             required
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Access Token</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none"
+                            className="w-full px-5 py-4 rounded-2xl bg-white/50 border border-slate-200/60 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all outline-none font-medium placeholder:text-slate-300"
                             placeholder="••••••••"
                             required
                         />
                     </div>
 
                     {error && (
-                        <div className="p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-center">
+                        <div className="p-4 rounded-2xl bg-red-50 text-red-600 text-xs font-bold flex items-center gap-2 animate-shake">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
                             {error}
                         </div>
                     )}
@@ -99,9 +100,13 @@ export default function Login() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                        className="w-full py-4 px-6 bg-slate-900 hover:bg-black text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-slate-200 hover:shadow-2xl hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                     >
-                        {loading ? <Loader2 className="animate-spin" size={20} /> : 'Sign In'}
+                        {loading ? <Loader2 className="animate-spin" size={18} /> : (
+                            <>
+                                Authenticate System <LayoutDashboard size={18} />
+                            </>
+                        )}
                     </button>
                 </form>
 
