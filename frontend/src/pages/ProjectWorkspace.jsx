@@ -545,6 +545,24 @@ export default function ProjectWorkspace() {
         ? new Date(Math.max(...allTasks.map(t => new Date(t.due_date).getTime())))
         : project?.end_date;
 
+    // Month-based groupings for HOD View
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const nextMonthDate = new Date(currentYear, currentMonth + 1, 1);
+
+    const tasksThisMonth = allTasks.filter(t => {
+        const d = new Date(t.due_date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && t.status !== 'completed';
+    });
+
+    const tasksNextMonth = allTasks.filter(t => {
+        const d = new Date(t.due_date);
+        return d.getMonth() === nextMonthDate.getMonth() && d.getFullYear() === nextMonthDate.getFullYear() && t.status !== 'completed';
+    });
+
+    const delayedTasks = allTasks.filter(t => t.is_overdue && t.status !== 'completed');
+
     return (
         <div className="space-y-6">
             {/* List Selector (Mock Sidebar for Project Switching) */}
@@ -662,43 +680,88 @@ export default function ProjectWorkspace() {
 
                 {/* OVERVIEW TAB */}
                 {activeTab === 'overview' && (
-                    <div className="p-8 grid grid-cols-2 gap-8">
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                <TrendingUp size={20} className="text-blue-600" />
-                                Current Focus
-                            </h3>
-                            <div className="space-y-4">
-                                {wbs.flatMap(w => w.tasks || []).filter(t => t.status === 'in_progress').map(task => (
-                                    <div key={task.id} className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg flex justify-between items-center">
-                                        <div>
-                                            <p className="font-semibold text-slate-800">{task.name}</p>
-                                            <p className="text-xs text-slate-500">Due: {formatDate(task.due_date)}</p>
+                    <div className="p-8 space-y-10 animate-in fade-in duration-500">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* This Month */}
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                        <Clock className="text-blue-500" size={16} />
+                                        This Month
+                                    </h3>
+                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full uppercase">Milestones</span>
+                                </div>
+                                <div className="space-y-4">
+                                    {tasksThisMonth.map(task => (
+                                        <div key={task.id} className="p-5 bg-white border border-slate-200/60 rounded-2xl shadow-sm hover:shadow-md transition-all group">
+                                            <p className="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition-colors mb-2">{task.name}</p>
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Due: {formatDate(task.due_date)}</p>
+                                                <StatusBadge status={task.status} isOverdue={task.is_overdue} />
+                                            </div>
                                         </div>
-                                        <StatusBadge status={task.status} isOverdue={task.is_overdue} />
-                                    </div>
-                                ))}
-                                {wbs.flatMap(w => w.tasks || []).filter(t => t.status === 'in_progress').length === 0 && (
-                                    <p className="text-slate-400 italic">No tasks currently in progress.</p>
-                                )}
+                                    ))}
+                                    {tasksThisMonth.length === 0 && (
+                                        <div className="py-12 border-2 border-dashed border-slate-100 rounded-3xl text-center">
+                                            <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No milestones this month</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
 
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                <AlertCircle size={20} className="text-amber-500" />
-                                At Risk / Delayed
-                            </h3>
-                            <div className="space-y-4">
-                                {wbs.flatMap(w => w.tasks || []).filter(t => t.is_overdue).map(task => (
-                                    <div key={task.id} className="p-4 bg-red-50/50 border border-red-100 rounded-lg flex justify-between items-center">
-                                        <div>
-                                            <p className="font-semibold text-slate-800">{task.name}</p>
-                                            <p className="text-xs text-red-500 font-medium">Due: {formatDate(task.due_date)}</p>
+                            {/* Next Month */}
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                        <Calendar className="text-indigo-500" size={16} />
+                                        Next Month
+                                    </h3>
+                                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-full uppercase">Outlook</span>
+                                </div>
+                                <div className="space-y-4">
+                                    {tasksNextMonth.map(task => (
+                                        <div key={task.id} className="p-5 bg-white border border-slate-200/60 rounded-2xl shadow-sm hover:shadow-md transition-all group">
+                                            <p className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors mb-2">{task.name}</p>
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Due: {formatDate(task.due_date)}</p>
+                                                <StatusBadge status={task.status} isOverdue={task.is_overdue} />
+                                            </div>
                                         </div>
-                                        <StatusBadge status={task.status} isOverdue={task.is_overdue} />
-                                    </div>
-                                ))}
+                                    ))}
+                                    {tasksNextMonth.length === 0 && (
+                                        <div className="py-12 border-2 border-dashed border-slate-100 rounded-3xl text-center">
+                                            <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No activities scheduled</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* At Risk / Delayed */}
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                        <AlertCircle className="text-rose-500" size={16} />
+                                        At Risk
+                                    </h3>
+                                    <span className="px-2 py-0.5 bg-rose-50 text-rose-600 text-[10px] font-black rounded-full uppercase">Critical</span>
+                                </div>
+                                <div className="space-y-4">
+                                    {delayedTasks.map(task => (
+                                        <div key={task.id} className="p-5 bg-rose-50/30 border border-rose-100/60 rounded-2xl shadow-sm hover:shadow-md transition-all group">
+                                            <p className="font-bold text-slate-900 text-sm group-hover:text-rose-600 transition-colors mb-2">{task.name}</p>
+                                            <div className="flex items-center justify-between">
+                                                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Overdue: {formatDate(task.due_date)}</p>
+                                                <StatusBadge status={task.status} isOverdue={task.is_overdue} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {delayedTasks.length === 0 && (
+                                        <div className="py-12 bg-emerald-50/30 border border-emerald-100 rounded-3xl text-center">
+                                            <CheckCircle2 className="mx-auto text-emerald-500 mb-2" size={24} />
+                                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">All tasks on track</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
