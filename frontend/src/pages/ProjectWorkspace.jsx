@@ -374,13 +374,18 @@ export default function ProjectWorkspace() {
 
     function openEditTaskModal(task) {
         setSelectedTaskItem(task);
+
+        // Use rolled-up dates if they exist (they are Date objects from enrichedTasks)
+        const startDate = task.display_start ? (task.display_start instanceof Date ? task.display_start.toISOString().split('T')[0] : task.display_start.split('T')[0]) : (task.planned_start ? task.planned_start.split('T')[0] : '');
+        const endDate = task.display_end ? (task.display_end instanceof Date ? task.display_end.toISOString().split('T')[0] : task.display_end.split('T')[0]) : (task.due_date ? task.due_date.split('T')[0] : '');
+
         setTaskFormData({
             name: task.name,
             parent_id: task.parent_id,
             assignee_id: task.assignee_id || '',
             status: task.status,
-            planned_start: task.planned_start ? task.planned_start.split('T')[0] : '',
-            due_date: task.due_date ? task.due_date.split('T')[0] : ''
+            planned_start: startDate,
+            due_date: endDate
         });
         setIsEditTaskModalOpen(true);
     }
@@ -1733,22 +1738,50 @@ export default function ProjectWorkspace() {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Start Date</label>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="block text-sm font-semibold text-slate-700">Start Date</label>
+                                        {enrichedTasks.some(t => t.parent_id === selectedTaskItem?.id) && (
+                                            <span className="text-[9px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded leading-none">AUTO</span>
+                                        )}
+                                    </div>
                                     <input
                                         type="date"
-                                        className="w-full border p-2 rounded-lg border-slate-200 outline-none"
+                                        readOnly={enrichedTasks.some(t => t.parent_id === selectedTaskItem?.id)}
+                                        className={clsx(
+                                            "w-full border p-2 rounded-lg outline-none transition-all",
+                                            enrichedTasks.some(t => t.parent_id === selectedTaskItem?.id)
+                                                ? "bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed"
+                                                : "focus:ring-2 focus:ring-blue-500 border-slate-200"
+                                        )}
                                         value={taskFormData.planned_start}
                                         onChange={e => setTaskFormData({ ...taskFormData, planned_start: e.target.value })}
                                     />
+                                    {enrichedTasks.some(t => t.parent_id === selectedTaskItem?.id) && (
+                                        <p className="text-[9px] text-slate-400 mt-1 italic">Derived from sub-tasks</p>
+                                    )}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Finish Date (Due)</label>
+                                    <div className="flex justify-between items-center mb-1">
+                                        <label className="block text-sm font-semibold text-slate-700">Finish Date (Due)</label>
+                                        {enrichedTasks.some(t => t.parent_id === selectedTaskItem?.id) && (
+                                            <span className="text-[9px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded leading-none">AUTO</span>
+                                        )}
+                                    </div>
                                     <input
                                         type="date"
-                                        className="w-full border p-2 rounded-lg border-slate-200 outline-none"
+                                        readOnly={enrichedTasks.some(t => t.parent_id === selectedTaskItem?.id)}
+                                        className={clsx(
+                                            "w-full border p-2 rounded-lg outline-none transition-all",
+                                            enrichedTasks.some(t => t.parent_id === selectedTaskItem?.id)
+                                                ? "bg-slate-50 border-slate-200 text-slate-500 cursor-not-allowed"
+                                                : "focus:ring-2 focus:ring-blue-500 border-slate-200"
+                                        )}
                                         value={taskFormData.due_date}
                                         onChange={e => setTaskFormData({ ...taskFormData, due_date: e.target.value })}
                                     />
+                                    {enrichedTasks.some(t => t.parent_id === selectedTaskItem?.id) && (
+                                        <p className="text-[9px] text-slate-400 mt-1 italic">Derived from sub-tasks</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
