@@ -701,19 +701,19 @@ export default function ProjectWorkspace() {
                                 </div>
                                 <div className="space-y-4">
                                     {tasksThisMonth.map(task => (
-                                        <div key={task.id} className="p-5 bg-white border border-slate-200/60 rounded-2xl shadow-sm hover:shadow-md transition-all group">
-                                            <p className="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition-colors mb-2">{task.name}</p>
-                                            <div className="flex flex-col gap-1 mb-2">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Clock size={10} className="text-slate-400" />
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Start: {formatDate(task.planned_start || task.created_at)}</p>
+                                        <div key={task.id} className="p-3.5 bg-white border border-slate-200/60 rounded-xl shadow-sm hover:shadow-md transition-all group">
+                                            <p className="font-bold text-slate-900 text-xs group-hover:text-blue-600 transition-colors mb-1.5 line-clamp-1">{task.name}</p>
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-1">
+                                                        <Clock size={10} className="text-slate-400" />
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{formatDate(task.planned_start || task.created_at)}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Calendar size={10} className="text-blue-400" />
+                                                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{formatDate(task.due_date)}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <Calendar size={10} className="text-blue-400" />
-                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Due: {formatDate(task.due_date)}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex justify-end pt-2 border-t border-slate-50">
                                                 <StatusBadge status={task.status} isOverdue={task.is_overdue} />
                                             </div>
                                         </div>
@@ -737,19 +737,19 @@ export default function ProjectWorkspace() {
                                 </div>
                                 <div className="space-y-4">
                                     {tasksNextMonth.map(task => (
-                                        <div key={task.id} className="p-5 bg-white border border-slate-200/60 rounded-2xl shadow-sm hover:shadow-md transition-all group">
-                                            <p className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors mb-2">{task.name}</p>
-                                            <div className="flex flex-col gap-1 mb-2">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Clock size={10} className="text-slate-400" />
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Start: {formatDate(task.planned_start || task.created_at)}</p>
+                                        <div key={task.id} className="p-3.5 bg-white border border-slate-200/60 rounded-xl shadow-sm hover:shadow-md transition-all group">
+                                            <p className="font-bold text-slate-900 text-xs group-hover:text-indigo-600 transition-colors mb-1.5 line-clamp-1">{task.name}</p>
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center gap-1">
+                                                        <Clock size={10} className="text-slate-400" />
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{formatDate(task.planned_start || task.created_at)}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        <Calendar size={10} className="text-indigo-400" />
+                                                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{formatDate(task.due_date)}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <Calendar size={10} className="text-indigo-400" />
-                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Due: {formatDate(task.due_date)}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex justify-end pt-2 border-t border-slate-50">
                                                 <StatusBadge status={task.status} isOverdue={task.is_overdue} />
                                             </div>
                                         </div>
