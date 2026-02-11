@@ -538,11 +538,45 @@ export default function ProjectWorkspace() {
 
     // Derived dates based on WBS content
     const allTasks = wbs.flatMap(p => p.tasks || []);
-    const derivedStartDate = allTasks.length > 0
-        ? new Date(Math.min(...allTasks.map(t => new Date(t.planned_start || t.created_at).getTime())))
+
+    // Helper to calculate rolled-up dates for a task hierarchy
+    const getRolledUpDates = (task, flatTasks) => {
+        const children = flatTasks.filter(t => t.parent_id === task.id);
+
+        if (children.length === 0) {
+            return {
+                start: new Date(task.planned_start || task.created_at),
+                end: new Date(task.due_date)
+            };
+        }
+
+        let minStart = null;
+        let maxEnd = null;
+
+        children.forEach(child => {
+            const childDates = getRolledUpDates(child, flatTasks);
+            if (!minStart || childDates.start < minStart) minStart = childDates.start;
+            if (!maxEnd || childDates.end > maxEnd) maxEnd = childDates.end;
+        });
+
+        return { start: minStart, end: maxEnd };
+    };
+
+    // Enrich tasks with rolled-up dates
+    const enrichedTasks = allTasks.map(t => {
+        const dates = getRolledUpDates(t, allTasks);
+        return {
+            ...t,
+            display_start: dates.start,
+            display_end: dates.end
+        };
+    });
+
+    const derivedStartDate = enrichedTasks.length > 0
+        ? new Date(Math.min(...enrichedTasks.map(t => t.display_start.getTime())))
         : project?.start_date;
-    const derivedEndDate = allTasks.length > 0
-        ? new Date(Math.max(...allTasks.map(t => new Date(t.due_date).getTime())))
+    const derivedEndDate = enrichedTasks.length > 0
+        ? new Date(Math.max(...enrichedTasks.map(t => t.display_end.getTime())))
         : project?.end_date;
 
     // Month-based groupings for HOD View (based on task activity)
@@ -574,7 +608,7 @@ export default function ProjectWorkspace() {
         return roots;
     };
 
-    const taskTree = buildTaskTree(allTasks);
+    const taskTree = buildTaskTree(enrichedTasks);
 
     // Get recursive subtask stats
     const getSubtaskStats = (task) => {
@@ -594,19 +628,17 @@ export default function ProjectWorkspace() {
     };
 
     const filterTreeByMonth = (roots, isNextMonth = false) => {
-        const targetStart = isNextMonth ? startOfNextMonth : new Date(0); // For "This Month", we show all uncompleted started tasks
+        const targetStart = isNextMonth ? startOfNextMonth : new Date(0);
         const targetEnd = isNextMonth ? endOfNextMonth : endOfThisMonth;
 
         return roots.filter(t => {
             if (t.status === 'completed') return false;
 
-            const start = new Date(t.planned_start || t.created_at);
+            const start = t.display_start;
 
             if (isNextMonth) {
-                // Outlook: specifically starting next month
                 return start >= targetStart && start <= targetEnd;
             } else {
-                // This Month: already started and not done
                 return start <= targetEnd;
             }
         });
@@ -1088,13 +1120,17 @@ export default function ProjectWorkspace() {
                                             </tr>
                                             {(() => {
                                                 const renderRecursive = (items, parentId = null, depth = 0, prefix = '') => {
-                                                    return items
-                                                        .filter(t => t.parent_id === parentId)
+                                                    // Use enriched tasks for dates
+                                                    return enrichedTasks
+                                                        .filter(t => t.parent_id === parentId && phase.tasks.some(pt => pt.id === t.id || pt.id === t.root_id))
+                                                        // Wait, phase.tasks is what contains the tasks for this phase.
+                                                        // Actually, I should probably just filter enrichedTasks by wbs_id since each phase corresponds to a WBS node.
+                                                        .filter(t => t.wbs_id === phase.id && t.parent_id === parentId)
                                                         .sort((a, b) => (a.position - b.position) || (a.id - b.id))
                                                         .map((task, tIdx) => {
                                                             const currentPrefix = prefix ? `${prefix}.${tIdx + 1}` : `${pIdx + 1}.${tIdx + 1}`;
-                                                            const start = new Date(task.planned_start || task.created_at || Date.now());
-                                                            const end = new Date(task.due_date);
+                                                            const start = task.display_start;
+                                                            const end = task.display_end;
                                                             const duration = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
 
                                                             return (
@@ -1139,7 +1175,7 @@ export default function ProjectWorkspace() {
                                                                             {duration}d
                                                                         </td>
                                                                         <td className="px-6 py-4 text-xs text-slate-500">
-                                                                            {formatDate(task.planned_start)} - {formatDate(task.due_date)}
+                                                                            {formatDate(start)} - {formatDate(end)}
                                                                         </td>
                                                                         <td className="px-6 py-4 text-center relative">
                                                                             <div className="flex items-center justify-center gap-2">
