@@ -775,22 +775,18 @@ export default function ProjectWorkspace() {
                                                                     {stats.total} Sub-tasks
                                                                 </p>
                                                             </div>
-                                                            <div className="flex gap-2">
-                                                                <span className="text-[9px] font-black px-1.5 py-0.5 bg-green-50 text-green-600 rounded-md">
-                                                                    {stats.completed} DONE
-                                                                </span>
-                                                                {stats.delayed > 0 && (
-                                                                    <span className="text-[9px] font-black px-1.5 py-0.5 bg-red-50 text-red-600 rounded-md animate-pulse">
-                                                                        {stats.delayed} DELAY
-                                                                    </span>
-                                                                )}
-                                                            </div>
                                                         </div>
                                                         <div className="space-y-1.5 ml-4 border-l-2 border-slate-50 pl-3">
-                                                            {stats.children.filter(c => c.status !== 'completed').map(child => (
+                                                            {stats.children.map(child => (
                                                                 <div key={child.id} className="flex items-center justify-between group/sub">
-                                                                    <p className="text-[11px] font-medium text-slate-600 group-hover/sub:text-blue-500 truncate">{child.name}</p>
-                                                                    {child.is_overdue && (
+                                                                    <p className={clsx(
+                                                                        "text-[11px] font-medium truncate mb-1",
+                                                                        child.status === 'completed' ? "text-slate-400" : "text-slate-600 group-hover/sub:text-blue-500"
+                                                                    )}>
+                                                                        {child.name}
+                                                                        {child.status === 'completed' && <span className="ml-2 text-[8px] font-black text-green-500 uppercase tracking-tighter">Done</span>}
+                                                                    </p>
+                                                                    {child.status !== 'completed' && child.is_overdue && (
                                                                         <span className="text-[8px] font-black text-red-400 uppercase">Delayed</span>
                                                                     )}
                                                                 </div>
