@@ -555,19 +555,65 @@ export default function ProjectWorkspace() {
     const startOfNextMonth = new Date(currentYear, currentMonth + 1, 1);
     const endOfNextMonth = new Date(currentYear, currentMonth + 2, 0, 23, 59, 59);
 
-    const tasksThisMonth = allTasks.filter(t => {
-        if (t.status === 'completed') return false;
-        const start = new Date(t.planned_start || t.created_at);
-        // Show everything that has started (or was supposed to start) and isn't done yet
-        return start <= endOfThisMonth;
-    });
+    // Tree building helper
+    const buildTaskTree = (flatTasks) => {
+        const taskMap = {};
+        const roots = [];
 
-    const tasksNextMonth = allTasks.filter(t => {
-        if (t.status === 'completed') return false;
-        const start = new Date(t.planned_start || t.created_at);
-        // Outlook: Show specifically what is starting next month
-        return start > endOfThisMonth && start <= endOfNextMonth;
-    });
+        flatTasks.forEach(t => {
+            taskMap[t.id] = { ...t, children: [] };
+        });
+
+        flatTasks.forEach(t => {
+            if (t.parent_id && taskMap[t.parent_id]) {
+                taskMap[t.parent_id].children.push(taskMap[t.id]);
+            } else {
+                roots.push(taskMap[t.id]);
+            }
+        });
+        return roots;
+    };
+
+    const taskTree = buildTaskTree(allTasks);
+
+    // Get recursive subtask stats
+    const getSubtaskStats = (task) => {
+        let stats = { total: 0, completed: 0, delayed: 0, children: [] };
+
+        const traverse = (t) => {
+            t.children?.forEach(child => {
+                stats.total++;
+                if (child.status === 'completed') stats.completed++;
+                if (child.is_overdue && child.status !== 'completed') stats.delayed++;
+                stats.children.push(child);
+                traverse(child);
+            });
+        };
+        traverse(task);
+        return stats;
+    };
+
+    const filterTreeByMonth = (roots, isNextMonth = false) => {
+        const targetStart = isNextMonth ? startOfNextMonth : new Date(0); // For "This Month", we show all uncompleted started tasks
+        const targetEnd = isNextMonth ? endOfNextMonth : endOfThisMonth;
+
+        return roots.filter(t => {
+            if (t.status === 'completed') return false;
+
+            const start = new Date(t.planned_start || t.created_at);
+
+            if (isNextMonth) {
+                // Outlook: specifically starting next month
+                return start >= targetStart && start <= targetEnd;
+            } else {
+                // This Month: already started and not done
+                return start <= targetEnd;
+            }
+        });
+    };
+
+    const tasksThisMonth = filterTreeByMonth(taskTree, false);
+    const tasksNextMonth = filterTreeByMonth(taskTree, true);
 
     const delayedTasks = allTasks.filter(t => t.is_overdue && t.status !== 'completed');
 
@@ -700,11 +746,16 @@ export default function ProjectWorkspace() {
                                     <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-black rounded-full uppercase">Milestones</span>
                                 </div>
                                 <div className="space-y-4">
-                                    {tasksThisMonth.map(task => (
-                                        <div key={task.id} className="p-3.5 bg-white border border-slate-200/60 rounded-xl shadow-sm hover:shadow-md transition-all group">
-                                            <p className="font-bold text-slate-900 text-xs group-hover:text-blue-600 transition-colors mb-1.5 line-clamp-1">{task.name}</p>
-                                            <div className="flex items-center justify-between gap-4">
-                                                <div className="flex items-center gap-3">
+                                    {tasksThisMonth.map(task => {
+                                        const stats = getSubtaskStats(task);
+                                        return (
+                                            <div key={task.id} className="p-4 bg-white border border-slate-200/60 rounded-xl shadow-sm hover:shadow-md transition-all group">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <p className="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition-colors line-clamp-1">{task.name}</p>
+                                                    <StatusBadge status={task.status} isOverdue={task.is_overdue} />
+                                                </div>
+
+                                                <div className="flex items-center gap-4 mb-3">
                                                     <div className="flex items-center gap-1">
                                                         <Clock size={10} className="text-slate-400" />
                                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{formatDate(task.planned_start || task.created_at)}</p>
@@ -714,10 +765,42 @@ export default function ProjectWorkspace() {
                                                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{formatDate(task.due_date)}</p>
                                                     </div>
                                                 </div>
-                                                <StatusBadge status={task.status} isOverdue={task.is_overdue} />
+
+                                                {stats.total > 0 && (
+                                                    <div className="border-t border-slate-50 pt-3 mt-3">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <div className="flex items-center gap-2">
+                                                                <GitBranch size={10} className="text-slate-400" />
+                                                                <p className="text-[10px] font-bold text-slate-500">
+                                                                    {stats.total} Sub-tasks
+                                                                </p>
+                                                            </div>
+                                                            <div className="flex gap-2">
+                                                                <span className="text-[9px] font-black px-1.5 py-0.5 bg-green-50 text-green-600 rounded-md">
+                                                                    {stats.completed} DONE
+                                                                </span>
+                                                                {stats.delayed > 0 && (
+                                                                    <span className="text-[9px] font-black px-1.5 py-0.5 bg-red-50 text-red-600 rounded-md animate-pulse">
+                                                                        {stats.delayed} DELAY
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="space-y-1.5 ml-4 border-l-2 border-slate-50 pl-3">
+                                                            {stats.children.filter(c => c.status !== 'completed').map(child => (
+                                                                <div key={child.id} className="flex items-center justify-between group/sub">
+                                                                    <p className="text-[11px] font-medium text-slate-600 group-hover/sub:text-blue-500 truncate">{child.name}</p>
+                                                                    {child.is_overdue && (
+                                                                        <span className="text-[8px] font-black text-red-400 uppercase">Delayed</span>
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                     {tasksThisMonth.length === 0 && (
                                         <div className="py-12 border-2 border-dashed border-slate-100 rounded-3xl text-center">
                                             <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No milestones this month</p>
@@ -736,11 +819,16 @@ export default function ProjectWorkspace() {
                                     <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded-full uppercase">Outlook</span>
                                 </div>
                                 <div className="space-y-4">
-                                    {tasksNextMonth.map(task => (
-                                        <div key={task.id} className="p-3.5 bg-white border border-slate-200/60 rounded-xl shadow-sm hover:shadow-md transition-all group">
-                                            <p className="font-bold text-slate-900 text-xs group-hover:text-indigo-600 transition-colors mb-1.5 line-clamp-1">{task.name}</p>
-                                            <div className="flex items-center justify-between gap-4">
-                                                <div className="flex items-center gap-3">
+                                    {tasksNextMonth.map(task => {
+                                        const stats = getSubtaskStats(task);
+                                        return (
+                                            <div key={task.id} className="p-4 bg-white border border-slate-200/60 rounded-xl shadow-sm hover:shadow-md transition-all group">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <p className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors line-clamp-1">{task.name}</p>
+                                                    <StatusBadge status={task.status} isOverdue={task.is_overdue} />
+                                                </div>
+
+                                                <div className="flex items-center gap-4">
                                                     <div className="flex items-center gap-1">
                                                         <Clock size={10} className="text-slate-400" />
                                                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{formatDate(task.planned_start || task.created_at)}</p>
@@ -750,10 +838,17 @@ export default function ProjectWorkspace() {
                                                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{formatDate(task.due_date)}</p>
                                                     </div>
                                                 </div>
-                                                <StatusBadge status={task.status} isOverdue={task.is_overdue} />
+
+                                                {stats.total > 0 && (
+                                                    <div className="mt-3 pt-3 border-t border-slate-50">
+                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                            Scheduled: {stats.total} Sub-tasks
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                     {tasksNextMonth.length === 0 && (
                                         <div className="py-12 border-2 border-dashed border-slate-100 rounded-3xl text-center">
                                             <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No activities scheduled</p>
