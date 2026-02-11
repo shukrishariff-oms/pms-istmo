@@ -129,6 +129,17 @@ export default function ProjectWorkspace() {
         status: ''
     });
 
+    // Helper to format date for <input type="date"> (YYYY-MM-DD)
+    const toInputDate = (d) => {
+        if (!d) return '';
+        const dateObj = (d instanceof Date) ? d : new Date(d);
+        if (isNaN(dateObj)) return '';
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     // Modal State
     const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
     const [newTaskData, setNewTaskData] = useState({
@@ -270,7 +281,7 @@ export default function ProjectWorkspace() {
                 vendor_name: pay.vendor_name,
                 amount: pay.amount,
                 payment_type: pay.payment_type,
-                planned_date: pay.planned_date.split('T')[0],
+                planned_date: toInputDate(pay.planned_date),
                 status: pay.status
             });
         } else {
@@ -280,7 +291,7 @@ export default function ProjectWorkspace() {
                 vendor_name: 'TBD Vendor',
                 amount: 0,
                 payment_type: 'capex',
-                planned_date: new Date().toISOString().split('T')[0],
+                planned_date: toInputDate(new Date()),
                 status: 'unpaid'
             });
         }
@@ -375,23 +386,19 @@ export default function ProjectWorkspace() {
     function openEditTaskModal(task) {
         setSelectedTaskItem(task);
 
-        // Use rolled-up dates if they exist (they are Date objects from enrichedTasks)
-        const startDate = task.display_start ? (task.display_start instanceof Date ? task.display_start.toISOString().split('T')[0] : task.display_start.split('T')[0]) : (task.planned_start ? task.planned_start.split('T')[0] : '');
-        const endDate = task.display_end ? (task.display_end instanceof Date ? task.display_end.toISOString().split('T')[0] : task.display_end.split('T')[0]) : (task.due_date ? task.due_date.split('T')[0] : '');
-
         setTaskFormData({
             name: task.name,
             parent_id: task.parent_id,
             assignee_id: task.assignee_id || '',
             status: task.status,
-            planned_start: startDate,
-            due_date: endDate
+            planned_start: toInputDate(task.display_start || task.planned_start),
+            due_date: toInputDate(task.display_end || task.due_date)
         });
         setIsEditTaskModalOpen(true);
     }
 
     function handleAddSubTask(parentTask) {
-        const today = new Date().toISOString().split('T')[0];
+        const today = toInputDate(new Date());
         setNewTaskData({
             wbs_id: parentTask.wbs_id,
             parent_id: parentTask.id,
