@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { formatDate } from '../utils/dateUtils';
+import { cn } from '../utils/cn';
 
 const currencyFormatter = new Intl.NumberFormat('en-MY', {
     style: 'currency',

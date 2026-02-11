@@ -5,6 +5,7 @@ import { getCategories, createCategory, deleteCategory } from '../services/categ
 import { Users, Plus, ShieldCheck, Calendar, Wallet, Trash2, Pencil, Settings, FolderTree, X } from 'lucide-react';
 import clsx from 'clsx';
 import { formatDate } from '../utils/dateUtils';
+import { cn } from '../utils/cn';
 
 const API_URL = window.location.hostname === 'localhost' ? "http://localhost:8000" : "";
 
