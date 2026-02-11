@@ -545,20 +545,20 @@ export default function ProjectWorkspace() {
         ? new Date(Math.max(...allTasks.map(t => new Date(t.due_date).getTime())))
         : project?.end_date;
 
-    // Month-based groupings for HOD View
+    // Month-based groupings for HOD View (based on start date)
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     const nextMonthDate = new Date(currentYear, currentMonth + 1, 1);
 
     const tasksThisMonth = allTasks.filter(t => {
-        const d = new Date(t.due_date);
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear && t.status !== 'completed';
+        const start = new Date(t.planned_start || t.created_at);
+        return start.getMonth() === currentMonth && start.getFullYear() === currentYear && t.status !== 'completed';
     });
 
     const tasksNextMonth = allTasks.filter(t => {
-        const d = new Date(t.due_date);
-        return d.getMonth() === nextMonthDate.getMonth() && d.getFullYear() === nextMonthDate.getFullYear() && t.status !== 'completed';
+        const start = new Date(t.planned_start || t.created_at);
+        return start.getMonth() === nextMonthDate.getMonth() && start.getFullYear() === nextMonthDate.getFullYear() && t.status !== 'completed';
     });
 
     const delayedTasks = allTasks.filter(t => t.is_overdue && t.status !== 'completed');
@@ -695,8 +695,17 @@ export default function ProjectWorkspace() {
                                     {tasksThisMonth.map(task => (
                                         <div key={task.id} className="p-5 bg-white border border-slate-200/60 rounded-2xl shadow-sm hover:shadow-md transition-all group">
                                             <p className="font-bold text-slate-900 text-sm group-hover:text-blue-600 transition-colors mb-2">{task.name}</p>
-                                            <div className="flex items-center justify-between">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Due: {formatDate(task.due_date)}</p>
+                                            <div className="flex flex-col gap-1 mb-2">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Clock size={10} className="text-slate-400" />
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Start: {formatDate(task.planned_start || task.created_at)}</p>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Calendar size={10} className="text-blue-400" />
+                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Due: {formatDate(task.due_date)}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end pt-2 border-t border-slate-50">
                                                 <StatusBadge status={task.status} isOverdue={task.is_overdue} />
                                             </div>
                                         </div>
@@ -722,8 +731,17 @@ export default function ProjectWorkspace() {
                                     {tasksNextMonth.map(task => (
                                         <div key={task.id} className="p-5 bg-white border border-slate-200/60 rounded-2xl shadow-sm hover:shadow-md transition-all group">
                                             <p className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors mb-2">{task.name}</p>
-                                            <div className="flex items-center justify-between">
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Due: {formatDate(task.due_date)}</p>
+                                            <div className="flex flex-col gap-1 mb-2">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Clock size={10} className="text-slate-400" />
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Start: {formatDate(task.planned_start || task.created_at)}</p>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Calendar size={10} className="text-indigo-400" />
+                                                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Due: {formatDate(task.due_date)}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-end pt-2 border-t border-slate-50">
                                                 <StatusBadge status={task.status} isOverdue={task.is_overdue} />
                                             </div>
                                         </div>
