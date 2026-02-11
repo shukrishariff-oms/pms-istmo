@@ -545,20 +545,28 @@ export default function ProjectWorkspace() {
         ? new Date(Math.max(...allTasks.map(t => new Date(t.due_date).getTime())))
         : project?.end_date;
 
-    // Month-based groupings for HOD View (based on start date)
+    // Month-based groupings for HOD View (based on task activity)
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    const nextMonthDate = new Date(currentYear, currentMonth + 1, 1);
+
+    const startOfThisMonth = new Date(currentYear, currentMonth, 1);
+    const endOfThisMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+    const startOfNextMonth = new Date(currentYear, currentMonth + 1, 1);
+    const endOfNextMonth = new Date(currentYear, currentMonth + 2, 0, 23, 59, 59);
 
     const tasksThisMonth = allTasks.filter(t => {
+        if (t.status === 'completed') return false;
         const start = new Date(t.planned_start || t.created_at);
-        return start.getMonth() === currentMonth && start.getFullYear() === currentYear && t.status !== 'completed';
+        // Show everything that has started (or was supposed to start) and isn't done yet
+        return start <= endOfThisMonth;
     });
 
     const tasksNextMonth = allTasks.filter(t => {
+        if (t.status === 'completed') return false;
         const start = new Date(t.planned_start || t.created_at);
-        return start.getMonth() === nextMonthDate.getMonth() && start.getFullYear() === nextMonthDate.getFullYear() && t.status !== 'completed';
+        // Outlook: Show specifically what is starting next month
+        return start > endOfThisMonth && start <= endOfNextMonth;
     });
 
     const delayedTasks = allTasks.filter(t => t.is_overdue && t.status !== 'completed');
