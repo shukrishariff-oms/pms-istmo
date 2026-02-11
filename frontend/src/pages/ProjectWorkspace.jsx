@@ -800,19 +800,27 @@ export default function ProjectWorkspace() {
 
                                                 {stats.total > 0 && (
                                                     <div className="border-t border-slate-50 pt-3 mt-3">
-                                                        <div className="space-y-1.5 ml-4 border-l-2 border-slate-50 pl-3">
+                                                        <div className="space-y-2 ml-4 border-l-2 border-slate-50 pl-3">
                                                             {stats.children.map(child => (
-                                                                <div key={child.id} className="flex items-center justify-between group/sub">
-                                                                    <p className={clsx(
-                                                                        "text-[11px] font-medium truncate mb-1",
-                                                                        child.status === 'completed' ? "text-slate-400" : "text-slate-600 group-hover/sub:text-blue-500"
-                                                                    )}>
-                                                                        {child.name}
-                                                                        {child.status === 'completed' && <span className="ml-2 text-[8px] font-black text-green-500 uppercase tracking-tighter">Done</span>}
-                                                                    </p>
-                                                                    {child.status !== 'completed' && child.is_overdue && (
-                                                                        <span className="text-[8px] font-black text-red-400 uppercase">Delayed</span>
-                                                                    )}
+                                                                <div key={child.id} className="flex items-center justify-between group/sub gap-4">
+                                                                    <div className="flex items-center gap-3 overflow-hidden">
+                                                                        <p className={clsx(
+                                                                            "text-[11px] font-medium truncate",
+                                                                            child.status === 'completed' ? "text-slate-400" : "text-slate-600 group-hover/sub:text-blue-500"
+                                                                        )}>
+                                                                            {child.name}
+                                                                        </p>
+                                                                        <span className="text-[9px] text-slate-400 font-mono whitespace-nowrap">
+                                                                            {formatDate(child.display_start || child.planned_start)}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex-shrink-0 text-right">
+                                                                        {child.status === 'completed' ? (
+                                                                            <span className="text-[8px] font-black text-green-500 uppercase tracking-tighter">Done</span>
+                                                                        ) : child.is_overdue ? (
+                                                                            <span className="text-[8px] font-black text-red-500 uppercase tracking-tighter">Delayed</span>
+                                                                        ) : null}
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>
@@ -861,12 +869,17 @@ export default function ProjectWorkspace() {
 
                                                 {stats.total > 0 && (
                                                     <div className="mt-3 pt-3 border-t border-slate-50">
-                                                        <div className="space-y-1.5 ml-4 border-l-2 border-slate-50 pl-3">
+                                                        <div className="space-y-2 ml-4 border-l-2 border-slate-50 pl-3">
                                                             {stats.children.map(child => (
-                                                                <div key={child.id} className="flex items-center justify-between group/sub">
-                                                                    <p className="text-[11px] font-medium text-slate-400 truncate mb-1">
-                                                                        {child.name}
-                                                                    </p>
+                                                                <div key={child.id} className="flex items-center justify-between group/sub gap-4">
+                                                                    <div className="flex items-center gap-3 overflow-hidden">
+                                                                        <p className="text-[11px] font-medium text-slate-400 truncate">
+                                                                            {child.name}
+                                                                        </p>
+                                                                        <span className="text-[9px] text-slate-400 font-mono whitespace-nowrap">
+                                                                            {formatDate(child.display_start || child.planned_start)}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>
