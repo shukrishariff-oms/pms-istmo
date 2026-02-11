@@ -681,7 +681,7 @@ export default function ProjectWorkspace() {
                 {/* OVERVIEW TAB */}
                 {activeTab === 'overview' && (
                     <div className="p-8 space-y-10 animate-in fade-in duration-500">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                             {/* This Month */}
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
@@ -731,34 +731,6 @@ export default function ProjectWorkspace() {
                                     {tasksNextMonth.length === 0 && (
                                         <div className="py-12 border-2 border-dashed border-slate-100 rounded-3xl text-center">
                                             <p className="text-xs font-bold text-slate-300 uppercase tracking-widest">No activities scheduled</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* At Risk / Delayed */}
-                            <div className="space-y-6">
-                                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                                        <AlertCircle className="text-rose-500" size={16} />
-                                        At Risk
-                                    </h3>
-                                    <span className="px-2 py-0.5 bg-rose-50 text-rose-600 text-[10px] font-black rounded-full uppercase">Critical</span>
-                                </div>
-                                <div className="space-y-4">
-                                    {delayedTasks.map(task => (
-                                        <div key={task.id} className="p-5 bg-rose-50/30 border border-rose-100/60 rounded-2xl shadow-sm hover:shadow-md transition-all group">
-                                            <p className="font-bold text-slate-900 text-sm group-hover:text-rose-600 transition-colors mb-2">{task.name}</p>
-                                            <div className="flex items-center justify-between">
-                                                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest">Overdue: {formatDate(task.due_date)}</p>
-                                                <StatusBadge status={task.status} isOverdue={task.is_overdue} />
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {delayedTasks.length === 0 && (
-                                        <div className="py-12 bg-emerald-50/30 border border-emerald-100 rounded-3xl text-center">
-                                            <CheckCircle2 className="mx-auto text-emerald-500 mb-2" size={24} />
-                                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">All tasks on track</p>
                                         </div>
                                     )}
                                 </div>
