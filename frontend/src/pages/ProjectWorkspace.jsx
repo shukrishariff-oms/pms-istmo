@@ -800,14 +800,6 @@ export default function ProjectWorkspace() {
 
                                                 {stats.total > 0 && (
                                                     <div className="border-t border-slate-50 pt-3 mt-3">
-                                                        <div className="flex items-center justify-between mb-2">
-                                                            <div className="flex items-center gap-2">
-                                                                <GitBranch size={10} className="text-slate-400" />
-                                                                <p className="text-[10px] font-bold text-slate-500">
-                                                                    {stats.total} Sub-tasks
-                                                                </p>
-                                                            </div>
-                                                        </div>
                                                         <div className="space-y-1.5 ml-4 border-l-2 border-slate-50 pl-3">
                                                             {stats.children.map(child => (
                                                                 <div key={child.id} className="flex items-center justify-between group/sub">
@@ -869,9 +861,15 @@ export default function ProjectWorkspace() {
 
                                                 {stats.total > 0 && (
                                                     <div className="mt-3 pt-3 border-t border-slate-50">
-                                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                                                            Scheduled: {stats.total} Sub-tasks
-                                                        </p>
+                                                        <div className="space-y-1.5 ml-4 border-l-2 border-slate-50 pl-3">
+                                                            {stats.children.map(child => (
+                                                                <div key={child.id} className="flex items-center justify-between group/sub">
+                                                                    <p className="text-[11px] font-medium text-slate-400 truncate mb-1">
+                                                                        {child.name}
+                                                                    </p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
