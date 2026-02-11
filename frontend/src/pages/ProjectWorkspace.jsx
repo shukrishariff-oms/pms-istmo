@@ -811,7 +811,7 @@ export default function ProjectWorkspace() {
                                                                             {child.name}
                                                                         </p>
                                                                         <span className="text-[9px] text-slate-400 font-mono whitespace-nowrap">
-                                                                            {formatDate(child.display_start || child.planned_start)}
+                                                                            {formatDate(child.display_start)} - {formatDate(child.display_end)}
                                                                         </span>
                                                                     </div>
                                                                     <div className="flex-shrink-0 text-right">
@@ -877,7 +877,7 @@ export default function ProjectWorkspace() {
                                                                             {child.name}
                                                                         </p>
                                                                         <span className="text-[9px] text-slate-400 font-mono whitespace-nowrap">
-                                                                            {formatDate(child.display_start || child.planned_start)}
+                                                                            {formatDate(child.display_start)} - {formatDate(child.display_end)}
                                                                         </span>
                                                                     </div>
                                                                 </div>
